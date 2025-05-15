@@ -7,7 +7,6 @@
     "test": "tsc && jest",
     "cdk": "cdk",
     "cdk-stateless": "cdk -c deployMode=stateless",
-    "cdk-stateful": "cdk -c deployMode=stateful",
     "prepare": "pre-commit install",
     "prettier": "prettier --check .",
     "prettier-fix": "prettier --write .",
@@ -20,7 +19,7 @@
     "organization": true
   },
   "license": "MIT",
-  "packageManager": "pnpm@10.8.0",
+  "packageManager": "pnpm@10.11.0+sha512.6540583f41cc5f628eb3d9773ecee802f4f9ef9923cc45b69890fb47991d4b092964694ec3a4f738a420c918a333062c8b925d312f42e4f0c263eb603551f977",
   "devDependencies": {
     "@eslint/js": "^9.23.0",
     "@types/jest": "^29.5.14",
@@ -38,8 +37,11 @@
     "typescript-eslint": "^8.28.0"
   },
   "dependencies": {
-    "aws-cdk-lib": "^2.185.0",
+    "@aws-cdk/aws-lambda-python-alpha": "2.195.0-alpha.0",
+    "@aws-cdk/aws-pipes-alpha": "2.195.0-alpha.0",
+    "@aws-cdk/aws-pipes-sources-alpha": "2.195.0-alpha.0",
+    "aws-cdk-lib": "^2.195.0",
     "constructs": "^10.4.2",
-    "@orcabus/platform-cdk-constructs": "0.0.6"
+    "@orcabus/platform-cdk-constructs": "0.0.7-alpha.6"
   }
 }

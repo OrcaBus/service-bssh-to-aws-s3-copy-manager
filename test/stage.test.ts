@@ -11,7 +11,7 @@ function synthesisMessageToString(sm: SynthesisMessage): string {
 describe('cdk-nag-stateless-toolchain-stack', () => {
   const app = new App({});
 
-  // You should configure all stack (sateless, stateful) to be tested
+  // You should configure all stack (stateless) to be tested
   const deployStack = new DeployStack(app, 'DeployStack', {
     // Pick the prod environment to test as it is the most strict
     // ...getStackProps('PROD'),

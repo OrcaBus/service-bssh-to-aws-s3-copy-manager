@@ -31,6 +31,7 @@ While the outputs will look something like this:
 
 """
 
+
 # Imports
 import json
 from io import StringIO
@@ -38,6 +39,9 @@ from pathlib import Path
 from urllib.parse import urlparse
 import pandas as pd
 import logging
+
+# Set ICAv2 environment variables
+from icav2_tools import set_icav2_env_vars
 
 # Wrapica imports
 from wrapica.enums import DataType, UriType
@@ -51,9 +55,8 @@ from wrapica.project_data import (
 )
 
 # Local imports
-from bssh_manager_tools.utils.manifest_helper import generate_run_manifest, get_dest_uri_from_src_uri
+from bssh_manager_tools.utils.manifest_helper import get_dest_uri_from_src_uri
 from bssh_manager_tools.utils.sample_helper import get_fastq_list_paths_from_bssh_output_and_fastq_list_csv
-from bssh_manager_tools.utils.aws_ssm_helpers import set_icav2_env_vars
 from bssh_manager_tools.utils.icav2_analysis_helpers import (
     get_bssh_json_file_id_from_analysis_output_list,
     get_fastq_list_csv_file_id_from_analysis_output_list, get_run_folder_obj_from_analysis_id,

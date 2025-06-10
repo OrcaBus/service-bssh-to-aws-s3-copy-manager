@@ -12,7 +12,7 @@ if (!deployMode) {
 }
 
 if (deployMode === 'stateless') {
-  new StatelessDeployStack(app, 'OrcaBusStatelessServiceStack', {
+  new StatelessDeployStack(app, 'BSSHToAWSS3CopyManagerStatelessDeploymentPipeline', {
     env: TOOLCHAIN_ENVIRONMENT,
   });
 } else {

@@ -19,8 +19,8 @@ export class StatelessDeployStack extends cdk.Stack {
         gamma: getStatelessStackProps('GAMMA'),
         prod: getStatelessStackProps('PROD'),
       },
-      pipelineName: 'OrcaBus-StatelessMicroservice',
-      cdkSynthCmd: ['pnpm install --frozen-lockfile --ignore-scripts', 'pnpm cdk synth'],
+      pipelineName: 'OrcaBus-BsshToAwsS3CopyStatelessMicroserviceDeploymentPipeline',
+      cdkSynthCmd: ['pnpm install --frozen-lockfile --ignore-scripts', 'pnpm cdk-stateless synth'],
     });
   }
 }

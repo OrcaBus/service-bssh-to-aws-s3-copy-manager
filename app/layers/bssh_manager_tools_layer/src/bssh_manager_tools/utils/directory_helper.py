@@ -8,18 +8,9 @@ Handle directory outputs
 from pathlib import Path
 from typing import Dict
 import typing
-import boto3
 
 # Local libraries
-from .globals import (
-    ICAV2_CACHE_PROJECT_BCLCONVERT_OUTPUT_SSM_PATH,
-    ICAV2_CACHE_PROJECT_ID_SSM_PATH
-)
 from .logger import get_logger
-
-# Dev libraries
-if typing.TYPE_CHECKING:
-    from mypy_boto3_ssm.client import SSMClient
 
 
 # Set logger

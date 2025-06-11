@@ -5,7 +5,7 @@ import {
   LambdaObject,
   lambdaToRequirementsMap,
 } from './interfaces';
-import { PythonUvFunction } from '@orcabus/platform-cdk-constructs/lambda';
+import { getPythonUvDockerImage, PythonUvFunction } from '@orcabus/platform-cdk-constructs/lambda';
 import path from 'path';
 import { BSSH_WORKFLOW_NAME, BSSH_WORKFLOW_VERSION, LAMBDA_DIR, LAYERS_DIR } from '../constants';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
@@ -26,7 +26,7 @@ export function buildBsshToolsLayer(scope: Construct): PythonLayerVersion {
     compatibleRuntimes: [lambda.Runtime.PYTHON_3_12],
     compatibleArchitectures: [lambda.Architecture.ARM_64],
     bundling: {
-      image: lambda.Runtime.PYTHON_3_12.bundlingImage,
+      image: getPythonUvDockerImage(),
       commandHooks: {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         beforeBundling(inputDir: string, outputDir: string): string[] {

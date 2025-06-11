@@ -7,7 +7,8 @@
       "Type": "Pass",
       "Next": "Submit Running Event",
       "Assign": {
-        "workflowInputs": "{% $states.input %}"
+        "workflowInputs": "{% $states.input %}",
+        "iterableCount": 0
       }
     },
     "Submit Running Event": {
@@ -103,12 +104,63 @@
           }
         }
       },
-      "Next": "Submit Succeeded Event"
+      "Next": "Wait for filemanager sync"
+    },
+    "Wait for filemanager sync": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Arguments": {
+        "FunctionName": "${__filemanager_sync_lambda_function_arn__}",
+        "Payload": {
+          "s3Prefix": "{% $workflowInputs.payload.data.engineParameters.outputUri %}"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Next": "Is Synced",
+      "Assign": {
+        "isSynced": "{% $states.result.Payload.isSynced %}"
+      }
+    },
+    "Is Synced": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Next": "Submit Succeeded Event",
+          "Condition": "{% $isSynced %}",
+          "Comment": "Is Synced"
+        },
+        {
+          "Next": "Fail",
+          "Condition": "{% $iterableCount > 60 %}",
+          "Comment": "Not synced within 5 minutes"
+        }
+      ],
+      "Default": "Wait 5 Seconds"
+    },
+    "Wait 5 Seconds": {
+      "Type": "Wait",
+      "Seconds": 5,
+      "Next": "Wait for filemanager sync",
+      "Assign": {
+        "iterableCount": "{% $iterableCount + 1 %}"
+      }
     },
     "Submit Succeeded Event": {
       "Type": "Task",
       "Resource": "arn:aws:states:::events:putEvents",
-      "Next": "Succeed",
       "Arguments": {
         "Entries": [
           {
@@ -139,10 +191,11 @@
             }
           }
         ]
-      }
+      },
+      "End": true
     },
-    "Succeed": {
-      "Type": "Succeed"
+    "Fail": {
+      "Type": "Fail"
     }
   }
 }

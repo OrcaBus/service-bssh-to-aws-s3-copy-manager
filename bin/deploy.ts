@@ -12,7 +12,7 @@ if (!deployMode) {
 }
 
 if (deployMode === 'stateless') {
-  new StatelessDeployStack(app, 'BSSHToAWSS3CopyStatelessPipeline', {
+  new StatelessDeployStack(app, 'BSSHStatelessPipeline', {
     env: TOOLCHAIN_ENVIRONMENT,
   });
 } else {

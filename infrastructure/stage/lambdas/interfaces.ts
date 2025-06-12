@@ -78,6 +78,7 @@ export const lambdaToRequirementsMap: LambdaToRequirementsMapType = {
   },
   addPortalRunIdAndWorkflowRunName: {
     needsBsshWorkflowEnvVars: true,
+    needsOrcabusApiToolsLayer: true,
   },
   addTags: {},
   getLibraryObjectsFromSamplesheet: {

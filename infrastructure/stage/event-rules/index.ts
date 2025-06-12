@@ -9,6 +9,7 @@ import * as events from 'aws-cdk-lib/aws-events';
 import { Construct } from 'constructs';
 import {
   BCLCONVERT_WORKFLOW_NAME,
+  BCLCONVERT_WORKFLOW_RULE_STATUS_VALUE,
   BSSH_WORKFLOW_NAME,
   WORKFLOW_MANAGER_EVENT_SOURCE,
   WORKFLOW_RUN_STATE_CHANGE_EVENT_TYPE,
@@ -46,7 +47,7 @@ export function buildAllEventRules(
             eventSource: WORKFLOW_MANAGER_EVENT_SOURCE,
             eventBus: props.eventBus,
             eventDetailType: WORKFLOW_RUN_STATE_CHANGE_EVENT_TYPE,
-            eventStatus: 'SUCCEEDED',
+            eventStatus: BCLCONVERT_WORKFLOW_RULE_STATUS_VALUE,
             workflowName: BCLCONVERT_WORKFLOW_NAME,
           }),
         });

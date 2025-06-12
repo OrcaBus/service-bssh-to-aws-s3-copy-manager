@@ -9,6 +9,7 @@ import {
 import * as sfn from 'aws-cdk-lib/aws-stepfunctions';
 import path from 'path';
 import {
+  BSSH_PAYLOAD_VERSION,
   ICAV2_DATA_COPY_DETAIL_TYPE,
   STACK_EVENT_SOURCE,
   STEP_FUNCTIONS_DIR,
@@ -35,7 +36,7 @@ function createStateMachineDefinitionSubstitutions(props: BuildSfnProps): {
   }
 
   /* Substitute the event bridge rule name in the state machine definition */
-  definitionSubstitutions['__icav2_copy_service_detail_type__'] = ICAV2_DATA_COPY_DETAIL_TYPE;
+  definitionSubstitutions['__icav2_data_copy_detail_type__'] = ICAV2_DATA_COPY_DETAIL_TYPE;
 
   /* Substitute the event detail type in the state machine definition */
   definitionSubstitutions['__workflow_run_state_change_detail_type__'] =
@@ -43,6 +44,9 @@ function createStateMachineDefinitionSubstitutions(props: BuildSfnProps): {
 
   /* Substitute the event source in the state machine definition */
   definitionSubstitutions['__stack_event_source__'] = STACK_EVENT_SOURCE;
+
+  /* Substitute the bssh payload version in the state machine definition */
+  definitionSubstitutions['__bssh_payload_version__'] = BSSH_PAYLOAD_VERSION;
 
   return definitionSubstitutions;
 }

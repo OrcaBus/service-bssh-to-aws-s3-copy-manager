@@ -9,6 +9,7 @@ import { getPythonUvDockerImage, PythonUvFunction } from '@orcabus/platform-cdk-
 import path from 'path';
 import { BSSH_WORKFLOW_NAME, BSSH_WORKFLOW_VERSION, LAMBDA_DIR, LAYERS_DIR } from '../constants';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as s3 from 'aws-cdk-lib/aws-s3';
 import { Duration } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { camelCaseToSnakeCase } from '../utils';
@@ -57,6 +58,7 @@ function buildLambdaFunction(scope: Construct, props: BuildLambdaProps): LambdaO
     timeout: Duration.seconds(60),
     includeOrcabusApiToolsLayer: lambdaRequirementsMap.needsOrcabusApiToolsLayer,
     includeIcav2Layer: lambdaRequirementsMap.needsIcav2AccessToken,
+    memorySize: props.lambdaName === 'getManifestAndFastqListRows' ? 1024 : undefined,
   });
 
   /* Do we need the bssh tools layer? */
@@ -75,6 +77,28 @@ function buildLambdaFunction(scope: Construct, props: BuildLambdaProps): LambdaO
   if (lambdaRequirementsMap.needsBsshWorkflowEnvVars) {
     lambdaFunction.addEnvironment('BSSH_WORKFLOW_NAME', BSSH_WORKFLOW_NAME);
     lambdaFunction.addEnvironment('BSSH_WORKFLOW_VERSION', BSSH_WORKFLOW_VERSION);
+  }
+
+  /* Add in the file system access */
+  if (lambdaRequirementsMap.needsCacheBucketReadAccess) {
+    const s3CacheBucketObj = s3.Bucket.fromBucketName(
+      scope,
+      props.lambdaName + 'CacheBucket',
+      props.awsS3CacheBucketName
+    );
+    s3CacheBucketObj.grantRead(lambdaFunction, `${props.awsS3PrimaryDataPrefix}*`);
+
+    // Add in Nag suppressions for the S3 bucket access with * access
+    NagSuppressions.addResourceSuppressions(
+      lambdaFunction,
+      [
+        {
+          id: 'AwsSolutions-IAM5',
+          reason: 'We need to access all objects in the cache bucket with the prefix',
+        },
+      ],
+      true
+    );
   }
 
   // AwsSolutions-L1 - We'll migrate to PYTHON_3_13 ASAP, soz

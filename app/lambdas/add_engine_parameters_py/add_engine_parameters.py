@@ -16,10 +16,10 @@ from os import environ
 from urllib.parse import urlunparse
 from pathlib import Path
 
-
 # Use the environment variables to determine the appropriate engine parameters
 AWS_S3_CACHE_BUCKET_NAME_ENV_VAR = "AWS_S3_CACHE_BUCKET_NAME"
 AWS_S3_PRIMARY_DATA_PREFIX_ENV_VAR = "AWS_S3_PRIMARY_DATA_PREFIX"
+
 
 def handler(event, context) -> Dict[str, Dict[str, str]]:
     """
@@ -49,6 +49,30 @@ def handler(event, context) -> Dict[str, Dict[str, str]]:
                 "s3",
                 bucket,
                 str(Path(prefix) / instrument_run_id / portal_run_id) + "/",
+                None, None, None
             )))
         }
     }
+
+
+# if __name__ == "__main__":
+#     from os import environ
+#     import json
+#     environ['AWS_S3_CACHE_BUCKET_NAME'] = 'pipeline-dev-cache-503977275616-ap-southeast-2'
+#     environ['AWS_S3_PRIMARY_DATA_PREFIX'] = 'byob-icav2/development/primary/'
+#     print(json.dumps(
+#         handler(
+#             {
+#                 "instrumentRunId": "241024_A00130_0336_BHW7MVDSXC",
+#                 "portalRunId": "2025061148d494ae"  # pragma: allowlist secret
+#             },
+#             None
+#         ),
+#         indent=4
+#     ))
+#
+#     # {
+#     #     "engineParameters": {
+#     #         "outputUri": "s3://pipeline-dev-cache-503977275616-ap-southeast-2/byob-icav2/development/primary/241024_A00130_0336_BHW7MVDSXC/2025061148d494ae/"
+#     #     }
+#     # }

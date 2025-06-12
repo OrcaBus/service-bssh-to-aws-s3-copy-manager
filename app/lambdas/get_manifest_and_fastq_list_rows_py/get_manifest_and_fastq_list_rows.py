@@ -34,10 +34,8 @@ While the outputs will look something like this:
 
 # Imports
 import json
-from io import StringIO
 from pathlib import Path
 from urllib.parse import urlparse
-import pandas as pd
 import logging
 
 # Set ICAv2 environment variables
@@ -55,14 +53,11 @@ from wrapica.project_data import (
 )
 
 # Local imports
-from bssh_manager_tools.utils.manifest_helper import get_dest_uri_from_src_uri
-from bssh_manager_tools.utils.sample_helper import get_fastq_list_paths_from_bssh_output_and_fastq_list_csv
 from bssh_manager_tools.utils.icav2_analysis_helpers import (
     get_bssh_json_file_id_from_analysis_output_list,
-    get_fastq_list_csv_file_id_from_analysis_output_list, get_run_folder_obj_from_analysis_id,
+    get_run_folder_obj_from_analysis_id,
     get_interop_files_from_run_folder, get_bclconvert_outputs_from_analysis_id,
 )
-from bssh_manager_tools.utils.compression_helpers import compress_dict
 from bssh_manager_tools.utils.logger import set_basic_logger
 
 # Set logger
@@ -90,19 +85,11 @@ def handler(event, context):
         create_data_if_not_found=True
     )
 
-    dest_project_id = dest_project_data_obj.project_id
-    dest_folder_path = Path(dest_project_data_obj.data.details.path)
-
     # Get the input run inputs
     logger.info("Collecting input run data objects")
     input_run_folder_obj: ProjectData = get_run_folder_obj_from_analysis_id(
         project_id=project_id,
         analysis_id=analysis_id
-    )
-
-    # Get the interop files
-    interop_files = get_interop_files_from_run_folder(
-        input_run_folder_obj
     )
 
     # Get the analysis output path
@@ -119,18 +106,6 @@ def handler(event, context):
         data_id=bclconvert_output_folder_id
     )
 
-    # Get the bssh_json
-    logger.info("Collecting bssh json file id")
-    bssh_output_file_id = get_bssh_json_file_id_from_analysis_output_list(bclconvert_output_data_list)
-
-    # Read the json object
-    bssh_json_dict = json.loads(
-        read_icav2_file_contents_to_string(
-            project_id=project_id,
-            data_id=bssh_output_file_id
-        )
-    )
-
     # Now we have the bsshoutput.json, we can filter the output_data_list to just be those under 'output/'
     # We also collect the bcl convert output object to get relative files from this directory
     # Such as the IndexMetricsOut.bin file in the Reports Directory
@@ -145,89 +120,11 @@ def handler(event, context):
         project_id=project_id,
         data_id=bcl_convert_output_fol_id
     )
-    bclconvert_output_data_list = list(
-        filter(
-            lambda data_obj:
-            (
-                # File is inside 'output' directory
-                    data_obj.data.details.path.startswith(
-                        str(bcl_convert_output_path) + "/"
-                    ) and
-                    not (
-                        # File is not the fastq_list_s3.csv or TSO500L_fastq_list_s3.csv
-                        # This file is just a list of presigned urls that will expire in a week
-                        data_obj.data.details.name.endswith("fastq_list_s3.csv")
-                    )
-            ),
-            bclconvert_output_data_list
-        )
+
+    # Get the interop files
+    interop_files = get_interop_files_from_run_folder(
+        input_run_folder_obj
     )
-
-    # List non-recursively so we can add these as uris to the output dict
-
-    # Get fastq list csv
-    logger.info("Getting the fastq list csv file")
-    fastq_list_csv_file_id = get_fastq_list_csv_file_id_from_analysis_output_list(bclconvert_output_data_list)
-    fastq_list_csv_pd = pd.read_csv(
-        StringIO(
-            read_icav2_file_contents_to_string(
-                project_id=project_id,
-                data_id=fastq_list_csv_file_id
-            )
-        )
-    )
-
-    # Merge the fastq list csv and the bssh output generation to collect the fastq paths
-    # Return value is a dictionary where each key is a sample ID, and the list are the absolute fastq paths
-    fastq_list_rows_df: pd.DataFrame = get_fastq_list_paths_from_bssh_output_and_fastq_list_csv(
-        fastq_list_pd=fastq_list_csv_pd,
-        bssh_output_dict=bssh_json_dict,
-        project_id=project_id,
-        run_output_path=Path(bclconvert_output_folder_obj.data.details.path)
-    )
-
-    # Get fastq list paths by sample id
-    fastq_list_paths_by_sample_id = {}
-    for sample_id, sample_df in fastq_list_rows_df.groupby("RGSM"):
-        fastq_list_paths_by_sample_id.update(
-            {
-                sample_id: sample_df["Read1FileUriSrc"].tolist() + sample_df["Read2FileUriSrc"].tolist()
-            }
-        )
-
-    for read_num in [1, 2]:
-        fastq_list_rows_df[f"Read{read_num}FileUriDest"] = fastq_list_rows_df[f"Read{read_num}FileUriSrc"].apply(
-            lambda src_uri: get_dest_uri_from_src_uri(
-                src_uri,
-                bcl_convert_output_path,
-                dest_project_id,
-                dest_folder_path
-            ) + Path(urlparse(src_uri).path).name
-        )
-
-    # Get the fastq list rows data frame
-    fastq_list_rows_df = (
-        fastq_list_rows_df.rename(
-            columns={
-                "Read1FileUriDest": "Read1FileUri",
-                "Read2FileUriDest": "Read2FileUri",
-            }
-        ).drop(
-            columns=[
-                "Read1File",
-                "Read2File",
-                "Read1FileUriSrc",
-                "Read2FileUriSrc",
-                "sample_prefix"
-            ]
-        )
-    )
-
-    # fastq list rows RGSM should also be the RGLB
-    fastq_list_rows_df["RGLB"] = fastq_list_rows_df["RGSM"]
-
-    # Write out as a dictionary
-    fastq_list_rows_df_list = fastq_list_rows_df.to_dict(orient='records')
 
     # Convert interop files to uris and add to the run manifest
     interops_as_uri = list(
@@ -298,12 +195,14 @@ def handler(event, context):
                     uri_type=UriType.ICAV2
                 )
             }
-        ],
-        "fastqListRowsB64gz": compress_dict(fastq_list_rows_df_list),
+        ]
     }
+
 
 # if __name__ == "__main__":
 #     from os import environ
+#     environ['AWS_PROFILE'] = 'umccr-development'
+#     environ['AWS_REGION'] = 'ap-southeast-2'
 #     environ['ICAV2_BASE_URL'] = "https://ica.illumina.com/ica/rest"
 #     environ['ICAV2_ACCESS_TOKEN_SECRET_ID'] = "ICAv2JWTKey-umccr-prod-service-dev"
 #
@@ -311,9 +210,9 @@ def handler(event, context):
 #         json.dumps(
 #             handler(
 #                 {
-#                     "project_id": "a7c67a80-c8f2-4348-adec-3a5a073d1d55",
-#                     "output_uri": "s3://pipeline-dev-cache-503977275616-ap-southeast-2/byob-icav2/development/primary_data/240229_7001234_1234_AHJLJLDS/20240530abcd1234/",
-#                     "analysis_id": "47936e52-21fd-457b-a1dc-97139d571441"
+#                     "projectId": "a7c67a80-c8f2-4348-adec-3a5a073d1d55",
+#                     "analysisId": "ecb3992e-06e3-4cc9-bc1f-82bcd35600d1",
+#                     "outputUri": "s3://pipeline-dev-cache-503977275616-ap-southeast-2/byob-icav2/development/primary/241024_A00130_0336_BHW7MVDSXC/202506117adb9eb7/"
 #                 },
 #                 None
 #             ),
@@ -322,6 +221,37 @@ def handler(event, context):
 #     )
 #
 #     # {
-#     #     "manifest_b64gz": "H4sIAIbSsGYC/+2dX0/jRhTFvwriuY7Hd8b/9g0ClKxALHhXW6mqRoM9BKuO7doOhVb97p1kl9ldsQtJNaSTyX0hB0Uid34+OXN9mSh/75e5uIM3vi/iPIpFQrw8uQGPUZZ4opC5R0UoSEyLoAhDv6xmtSdqUT30sveBEYCUHxASUMIJJAk/PA1Pz+Eo+2XMqYhELniexIJK7zCvxk19J7th745x4LFHgYV5GkWeyCnxWJErFVwHXpgEkkIcM1aEfjMf2vngnzXT3j/uuqbrR1Uz3X+z96suXIogFfQm9GQe5x5LGfEEi5mX0yAv0qC4FgXz266cie6BF2IQj3XHqm6gjC9/HJy+PXt7dpT5QNTTISXiOi8Wz3x67f3fftrbIlQfRVeX9RRhrQLrRPTDH+Nm1lZykKPhfkBiLxCb1DcNWut5UFeybbqh94/kbF4NpTLXPc8GMfSjvL/bKLjHSraP3UEh2kF2/FwOXZkjudXJTepC+e20aVu1DfBxM6/ReP/BeOOHvJJov7X53Sy2VF6V/YDQVoZ2Na+XG+v9rEJiKxHLxKJpy26lRJ+tTu1yLqpyeMBYW5vc+6blH+rf6+bPmh+KLm8KifjWbEo+u+5iPoyuyxrJrX0T8b5ULQneSawHsFs+jm4H3FvX3CWWdsOtYlV8n1qS3j8TteSBf6ZemQQEtOBZwM+U4lcBVw+jZac8mv61Uaw/KtJFzICYDWOOiBY8o5a6WRXpImZAzKYxgxY8C23FvP2hEWnBs8TW0IicxAyI2TDmMNWCZ2Cpm1WRLmZzgNlsGvMXwTNmK+bAScyAmDeRzYDZbAzzh7qQg+xmZS2Lb37hGbEuPL4p1mXkgMhfI7OpFjyLbN0aqZOYATEbwvzYRqexFjwLlhNSsMfOX1XpJGdAzqZjg2nBs9jWdGZOYgbEbDo1Qi14ltoazuHWY460UOFMbOUcOWlnQDtvxM6AdjbLGWiiheJM7YyNRZVOcgbkbIzzS8Mkq2ztwjBJmybVQlmb2RohqdPWBrT2xqwNaG3TnAMtFGewNUICNzkDcjbEmf54Ukrt8TPd+knp85wBORvODUa0UJxDS/OZka3385Phko2xEbppZ0A7m7bz0yGejX6OnIwNwNgwi/l7Mzz77LzFM7znYwMwNjbiZ0A/G+P80uDOqvhwYXC3EnJA5K+RJk9npTbujqmbnAE5G+L8eCosDbRQnJfnw5g9fv6qSic5A3I2nRtPZ/825vO2+xlYoIXinNqZG4sqneQMyNk0Zz2PBJ4BsdXP4CZnQM6mOadaKM6BrX5O3eQMyNkw55BooTiDpX4OiZv9M2D/vBE/A/rZNOdAC8WZ2pobgZucATmb5gxaKM7MVj+Dm5wBOZvmTLVQnENb/Uzd5AzI2XD//J1DdxbOn9n293VfhPJzZGtuMDf9DOhn034OtVB+jm31c+hmbgDmhmnOsRaKs63/HwxjNzkDct5IPgPms2nOkRaKc2JrbkRucgbkbPjcVxRqofpnS+9TFlU6yRmQs+lzjE8/i2zjedHYTc6AnI1xfukjFFbZ2oWPUKyEHBD5a6RJooVKk8TW1E7c5AzOcO7mde9f9/0tF20PXn/rtV1TcEZU4WngT2r1hrlo/YOqnNYzWQ//4/cFP9byuis9FL3MRVWV9dT5tR53XdO5v8r7QarkLxZfnev8Yi/aQf3t6rwpZOX+lZ21ZbdY7rtb0e/CG/by8woPHxbx7+4635383JWF85dz3HSdzAdZTHZgY92J+J3MxFTuTAwBocTdVZ58PD3fiRi63IUWsBP5UDa180vN5rNFgVdz95d6Jadlry7sTlzX47tduPueqBu1eytW+c+/Sza1iIyZAAA=",  # pragma: allowlist secret
-#     #     "fastq_list_rows_b64gz": "H4sIAIbSsGYC/9WbW2/bRhCF/4qh55gi98JL3rYbdNtAfQm3T0VBMJJSGEiK1AkKtEX/e2coZeOGR2tIT7OAbQ1Iwz6YDzM7Z7n85Z/Nm/Djq83Lu01wLkYfYhWji8FR0Gxe3NHt8Se+vVOmrptana7tvvv22m7+/UjXGr59nA/N9w/vjz8/PvCvPeznP9XL7fY4N8Os39n7477b35vB1Pez6cz9Xjf7w9Ac3s4Hs/34+PBhfvxrOsyf5y39faWGqaP/orSZlh/uh9e717tX41bVdNvqen67P/Cd7Th/+Pj++GnLUqZm+0VdCqaxmXYUTW+aiT6qd/Onz39Uv/29OWtWojWr/2v+98XdU3ZML4TI9IKnLx8c4meHNb/TNan87JCCaVRl8IOac/wIXwjeOe8r712kr+gC4tfWa36na1L5tXUKplGXwQ9qzvF7Au0JSsSvAfwa0fy+BtNoCuGHNOf7Z2Rq3DQDswzUQXH9gfWvFb3+tSoF02gL4Yc0Z/vnsvYF5yPVH30sMCE/Dfhp0fx0CqaxLYQf0pzjRxMnV5yPvP5Fap6MEPIzgJ8Rzc+kYBq7QvghzVl+kahR33Se3QOxuzi/tIBfK5pfm4Jp7AvhhzQ/0z9PLdOzCaT6q9Sa3WDX7E7XzuyUFHZflo/BpmAaB86DEssuqznLjhsmDTDUOamFsgVE7EDdDa1odm0KyAPXhcCDorOTZyRmLix9My6uAdHrAL1ONL0uBZSIphB6UHR23fOBFroY2LXTp0e1p/Ta852vCaVH6lJAiVBF0LsgOlt7XHhEjTyf4yr0kF4P6PWi6fUpoEToQuhB0c95PrbqFa151Dcjrr0B0BtE0xtSQIkwhdCDorO1x5Mm/ahozaOZBa579L2mZ2rJ9EydAkqELYMeFn2dX9A3+AUthZ6+OHtrsfCymq/zC/oGvyCP3Xr0LgAeFH2dX9A3+AV59NajdwH0oOjr/IK+wS9Io4dGb/H0Loi+zi/oG/yCPHrr0bsAelD0dX5B3+AX5NFbj94F0IOir/ML+ga/II4eGL3l08Oi8zNn4IrjYfOMj8aXyoDnQ8AztE89g5FCMD0isymgZCwPO41YgnnRz9Tfacnj57SOA0BvAKdbhkYyvaFJASWiK4MeFn2dazA3uAZ59NYDeAH0oOjs6bLIx1vIsXMBcgzp9YBeL5penwJKRF8IPSg6X3uR3V5k17CcsQb0lAGez0junKQuBZSIoQh6F0TnJ5el4nyVtjwRPQXoKdH00t6vmkZVF0IPis6fq478ToNbTpV53vRE9IDnM4NoekMKKBFNIfSg6PypXK4+T50z+uV4IKJngeeztWR6tk4BJUKVQQ+LzjsG7897nYt5h7VnwbpnRa97tkkBJUIXQg+Kzu5UL6eoPT8lWvasA6QH1j0ret2zKgWUCFMIPSg66xj4dRQiR1MLv9ngHaSnAT0tmp5OASXCFkIPis77PTbr0VVsHZYntIieAfSMaHpfA0pEWwg9KPqZd4moZVLDdFx4hA/Ss4CeFU3PpoAS0RVCD4rOOgZ+98Tz1LI8LLqw7rWAXiuaXpsCSkRfCD0oOr/XEpbnC1Vchk/s92wH6HWi6XUpoEQUsteCRX9L79f/ABq6wvWCQAAA"  # pragma: allowlist secret
+#     #     "icav2CopyJobList": [
+#     #         {
+#     #             "sourceUriList": [
+#     #                 "icav2://a7c67a80-c8f2-4348-adec-3a5a073d1d55/ilmn-analyses/241024_A00130_0336_BHW7MVDSXC_005f29_6b606d-ecb3992e-06e3-4cc9-bc1f-82bcd35600d1/output/Samples/",
+#     #                 "icav2://a7c67a80-c8f2-4348-adec-3a5a073d1d55/ilmn-analyses/241024_A00130_0336_BHW7MVDSXC_005f29_6b606d-ecb3992e-06e3-4cc9-bc1f-82bcd35600d1/output/Reports/"
+#     #             ],
+#     #             "destinationUri": "icav2://ea19a3f5-ec7c-4940-a474-c31cd91dbad4/primary/241024_A00130_0336_BHW7MVDSXC/202506117adb9eb7/"
+#     #         },
+#     #         {
+#     #             "sourceUriList": [
+#     #                 "icav2://a7c67a80-c8f2-4348-adec-3a5a073d1d55/ilmn-runs/bssh_aps2-sh-prod_4505508/InterOp/AlignmentMetricsOut.bin",
+#     #                 "icav2://a7c67a80-c8f2-4348-adec-3a5a073d1d55/ilmn-runs/bssh_aps2-sh-prod_4505508/InterOp/BasecallingMetricsOut.bin",
+#     #                 "icav2://a7c67a80-c8f2-4348-adec-3a5a073d1d55/ilmn-runs/bssh_aps2-sh-prod_4505508/InterOp/ErrorMetricsOut.bin",
+#     #                 "icav2://a7c67a80-c8f2-4348-adec-3a5a073d1d55/ilmn-runs/bssh_aps2-sh-prod_4505508/InterOp/CorrectedIntMetricsOut.bin",
+#     #                 "icav2://a7c67a80-c8f2-4348-adec-3a5a073d1d55/ilmn-runs/bssh_aps2-sh-prod_4505508/InterOp/EmpiricalPhasingMetricsOut.bin",
+#     #                 "icav2://a7c67a80-c8f2-4348-adec-3a5a073d1d55/ilmn-runs/bssh_aps2-sh-prod_4505508/InterOp/ExtendedTileMetricsOut.bin",
+#     #                 "icav2://a7c67a80-c8f2-4348-adec-3a5a073d1d55/ilmn-runs/bssh_aps2-sh-prod_4505508/InterOp/OpticalModelMetricsOut.bin",
+#     #                 "icav2://a7c67a80-c8f2-4348-adec-3a5a073d1d55/ilmn-runs/bssh_aps2-sh-prod_4505508/InterOp/IndexMetricsOut.bin",
+#     #                 "icav2://a7c67a80-c8f2-4348-adec-3a5a073d1d55/ilmn-runs/bssh_aps2-sh-prod_4505508/InterOp/PFGridMetricsOut.bin",
+#     #                 "icav2://a7c67a80-c8f2-4348-adec-3a5a073d1d55/ilmn-runs/bssh_aps2-sh-prod_4505508/InterOp/ExtractionMetricsOut.bin",
+#     #                 "icav2://a7c67a80-c8f2-4348-adec-3a5a073d1d55/ilmn-runs/bssh_aps2-sh-prod_4505508/InterOp/TileMetricsOut.bin",
+#     #                 "icav2://a7c67a80-c8f2-4348-adec-3a5a073d1d55/ilmn-runs/bssh_aps2-sh-prod_4505508/InterOp/QMetrics2030Out.bin",
+#     #                 "icav2://a7c67a80-c8f2-4348-adec-3a5a073d1d55/ilmn-runs/bssh_aps2-sh-prod_4505508/InterOp/QMetricsByLaneOut.bin",
+#     #                 "icav2://a7c67a80-c8f2-4348-adec-3a5a073d1d55/ilmn-runs/bssh_aps2-sh-prod_4505508/InterOp/SummaryRunMetricsOut.bin",
+#     #                 "icav2://a7c67a80-c8f2-4348-adec-3a5a073d1d55/ilmn-runs/bssh_aps2-sh-prod_4505508/InterOp/ImageMetricsOut.bin",
+#     #                 "icav2://a7c67a80-c8f2-4348-adec-3a5a073d1d55/ilmn-runs/bssh_aps2-sh-prod_4505508/InterOp/FWHMGridMetricsOut.bin",
+#     #                 "icav2://a7c67a80-c8f2-4348-adec-3a5a073d1d55/ilmn-runs/bssh_aps2-sh-prod_4505508/InterOp/QMetricsOut.bin",
+#     #                 "icav2://a7c67a80-c8f2-4348-adec-3a5a073d1d55/ilmn-runs/bssh_aps2-sh-prod_4505508/InterOp/EventMetricsOut.bin",
+#     #                 "icav2://a7c67a80-c8f2-4348-adec-3a5a073d1d55/ilmn-runs/bssh_aps2-sh-prod_4505508/InterOp/RegistrationMetricsOut.bin"
+#     #             ],
+#     #             "destinationUri": "icav2://ea19a3f5-ec7c-4940-a474-c31cd91dbad4/primary/241024_A00130_0336_BHW7MVDSXC/202506117adb9eb7/InterOp/"
+#     #         }
+#     #     ]
 #     # }

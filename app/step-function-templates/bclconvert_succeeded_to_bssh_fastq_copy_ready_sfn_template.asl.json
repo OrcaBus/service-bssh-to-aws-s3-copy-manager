@@ -6,9 +6,9 @@
       "Type": "Pass",
       "Next": "Get Workflow Inputs",
       "Assign": {
-        "instrumentRunId": "{% $input.instrumentRunId %}",
-        "bsshAnalysisId": "{% $input.bsshAnalysisId %}",
-        "bsshProjectId": "{% $input.bsshProjectId %}"
+        "instrumentRunId": "{% $states.input.instrumentRunId %}",
+        "bsshAnalysisId": "{% $states.input.bsshAnalysisId %}",
+        "bsshProjectId": "{% $states.input.bsshProjectId %}"
       }
     },
     "Get Workflow Inputs": {
@@ -41,6 +41,8 @@
               "End": true,
               "Output": {
                 "portalRunId": "{% $states.result.Payload.portalRunId %}",
+                "workflowName": "{% $states.result.Payload.workflowName %}",
+                "workflowVersion": "{% $states.result.Payload.workflowVersion %}",
                 "workflowRunName": "{% $states.result.Payload.workflowRunName %}"
               }
             }

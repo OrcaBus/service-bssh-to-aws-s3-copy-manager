@@ -24,8 +24,8 @@
               "status": "RUNNING",
               "timestamp": "{% $states.context.State.EnteredTime %}",
               "portalRunId": "{% $workflowInputs.portalRunId %}",
-              "workflowName": "$workflowInputs.workflowName",
-              "workflowVersion": "$workflowInputs.workflowVersion",
+              "workflowName": "{% $workflowInputs.workflowName %}",
+              "workflowVersion": "{% $workflowInputs.workflowVersion %}",
               "workflowRunName": "{% $workflowInputs.workflowRunName %}",
               "linkedLibraries": "{% $workflowInputs.linkedLibraries %}",
               "payload": {
@@ -68,7 +68,6 @@
         }
       },
       "Assign": {
-        "fastqListRowsB64gz": "{% $states.result.Payload.fastqListRowsB64gz %}",
         "icav2CopyJobList": "{% $states.result.Payload.icav2CopyJobList %}"
       }
     },
@@ -171,8 +170,8 @@
               "status": "SUCCEEDED",
               "timestamp": "{% $states.context.State.EnteredTime %}",
               "portalRunId": "{% $workflowInputs.portalRunId %}",
-              "workflowName": "$workflowInputs.workflowName",
-              "workflowVersion": "$workflowInputs.workflowVersion",
+              "workflowName": "{% $workflowInputs.workflowName %}",
+              "workflowVersion": "{% $workflowInputs.workflowVersion %}",
               "workflowRunName": "{% $workflowInputs.workflowRunName %}",
               "linkedLibraries": "{% $workflowInputs.linkedLibraries %}",
               "payload": {
@@ -182,8 +181,7 @@
                   "engineParameters": "{% $workflowInputs.payload.data.engineParameters %}",
                   "outputs": {
                     "outputUri": "{% $workflowInputs.payload.data.engineParameters.outputUri %}",
-                    "instrumentRunId": "{% $workflowInputs.payload.data.inputs.instrumentRunId %}",
-                    "fastqListRowsB64gz": "{% $fastqListRowsB64gz %}"
+                    "instrumentRunId": "{% $workflowInputs.payload.data.inputs.instrumentRunId %}"
                   },
                   "tags": "{% $workflowInputs.payload.data.tags %}"
                 }

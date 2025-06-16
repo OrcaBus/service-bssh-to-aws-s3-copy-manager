@@ -31,10 +31,13 @@ def handler(event, context):
     s3_path = urlparse(s3_prefix).path.lstrip('/')
 
     # List files in the filemanager
-    filemanager_files = list_files_recursively(
-        bucket=s3_bucket,
-        key=s3_path
-    )
+    filemanager_files = list(filter(
+        lambda x: not x['key'].endswith('.iap_xaccount_test.tmp'),
+        list_files_recursively(
+            bucket=s3_bucket,
+            key=s3_path
+        )
+    ))
 
     # List files in the S3 bucket using boto3
     s3_client: S3Client = boto3.client('s3')
@@ -67,6 +70,28 @@ def handler(event, context):
 #         handler(
 #             {
 #                 "s3Prefix": "s3://pipeline-prod-cache-503977275616-ap-southeast-2/byob-icav2/production/primary/250606_A01052_0266_BHFHHJDSXF/20250607eb351de0/"
+#             },
+#             None
+#         ),
+#         indent=4
+#     ))
+#
+#     # {
+#     #     "isSynced": true
+#     # }
+
+
+# if __name__ == "__main__":
+#     from os import environ
+#     import json
+#
+#     environ['AWS_PROFILE'] = 'umccr-production'
+#     environ['HOSTNAME_SSM_PARAMETER_NAME'] = '/hosted_zone/umccr/name'
+#     environ['ORCABUS_TOKEN_SECRET_ID'] = 'orcabus/token-service-jwt'
+#     print(json.dumps(
+#         handler(
+#             {
+#                 "s3Prefix": "s3://pipeline-prod-cache-503977275616-ap-southeast-2/byob-icav2/production/primary/250613_A00130_0370_AHFK32DSXF/202506153a0ee250/"
 #             },
 #             None
 #         ),

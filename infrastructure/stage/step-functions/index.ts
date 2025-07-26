@@ -11,6 +11,7 @@ import path from 'path';
 import {
   BSSH_PAYLOAD_VERSION,
   ICAV2_DATA_COPY_DETAIL_TYPE,
+  SFN_PREFIX,
   STACK_EVENT_SOURCE,
   STEP_FUNCTIONS_DIR,
   WORKFLOW_RUN_STATE_CHANGE_EVENT_TYPE,
@@ -74,7 +75,7 @@ function buildStepFunction(scope: Construct, props: BuildSfnProps): SfnObject {
 
   /* Create the state machine definition substitutions */
   const stateMachine = new sfn.StateMachine(scope, props.stateMachineName, {
-    stateMachineName: props.stateMachineName,
+    stateMachineName: `${SFN_PREFIX}${props.stateMachineName}`,
     definitionBody: sfn.DefinitionBody.fromFile(
       path.join(STEP_FUNCTIONS_DIR, sfnNameToSnakeCase + '_sfn_template.asl.json')
     ),

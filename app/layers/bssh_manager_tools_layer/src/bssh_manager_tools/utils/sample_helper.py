@@ -6,10 +6,10 @@ import pandas as pd
 from pathlib import Path
 
 # Wrapica imports
-from wrapica.enums import DataType, UriType
 from wrapica.project_data import (
     convert_project_id_and_data_path_to_uri
 )
+from wrapica.utils.globals import FILE_DATA_TYPE, ICAV2_URI_SCHEME
 
 
 def get_sample_id_path_prefix_from_bssh_datasets_dict(
@@ -240,10 +240,12 @@ def get_fastq_list_paths_from_bssh_output_and_fastq_list_csv(
     """
 
     fastq_list_pd["sample_prefix"] = fastq_list_pd.apply(
-        lambda row: get_sample_id_path_prefix_from_bssh_datasets_dict(
+        lambda row: (
+            get_sample_id_path_prefix_from_bssh_datasets_dict(
                 sample_id=row["RGSM"],
                 lane=row["Lane"],
                 datasets_dict=bssh_output_dict.get("Datasets")
+            )
         ),
         axis="columns"
     )
@@ -253,8 +255,8 @@ def get_fastq_list_paths_from_bssh_output_and_fastq_list_csv(
         lambda row: convert_project_id_and_data_path_to_uri(
             project_id=project_id,
             data_path=run_output_path / row["sample_prefix"] / row["Read1File"],
-            data_type=DataType.FILE,
-            uri_type=UriType.ICAV2
+            data_type=FILE_DATA_TYPE,
+            uri_type=ICAV2_URI_SCHEME
         ),
         axis="columns"
     )
@@ -263,8 +265,8 @@ def get_fastq_list_paths_from_bssh_output_and_fastq_list_csv(
         lambda row: convert_project_id_and_data_path_to_uri(
             project_id=project_id,
             data_path=run_output_path / row["sample_prefix"] / row["Read2File"],
-            data_type=DataType.FILE,
-            uri_type=UriType.ICAV2
+            data_type=FILE_DATA_TYPE,
+            uri_type=ICAV2_URI_SCHEME
         ),
         axis="columns"
     )

@@ -22,7 +22,7 @@ from wrapica.project_analysis import (
     get_analysis_input_object_from_analysis_input_code,
     get_analysis_output_object_from_analysis_output_code
 )
-from wrapica.enums import DataType
+from wrapica.utils.globals import FILE_DATA_TYPE
 
 # Local libraries
 from .logger import get_logger
@@ -39,7 +39,6 @@ def get_interop_files_from_run_folder(
     Get the interop files from the run folder
 
     :param run_folder_obj:
-    :param input_data_list:
 
     :return:
     """
@@ -57,7 +56,7 @@ def get_interop_files_from_run_folder(
             list_project_data_non_recursively(
                 project_id=run_folder_obj.project_id,
                 parent_folder_id=interop_directory_id,
-                data_type=DataType.FILE
+                data_type=FILE_DATA_TYPE
             )
         )
     )
@@ -96,7 +95,7 @@ def get_bclconvert_outputs_from_analysis_id(
     return bclconvert_output_folder_id, find_project_data_bulk(
         project_id=project_id,
         parent_folder_id=bclconvert_output_folder_id,
-        data_type=DataType.FILE
+        data_type="FILE"
     )
 
 

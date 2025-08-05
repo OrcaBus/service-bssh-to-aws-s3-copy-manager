@@ -95,7 +95,7 @@ def get_bclconvert_outputs_from_analysis_id(
     return bclconvert_output_folder_id, find_project_data_bulk(
         project_id=project_id,
         parent_folder_id=bclconvert_output_folder_id,
-        data_type="FILE"
+        data_type=FILE_DATA_TYPE
     )
 
 

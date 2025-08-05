@@ -142,7 +142,7 @@ def handler(event, context):
         index_metrics_uri = convert_project_id_and_data_path_to_uri(
             project_id,
             Path(bcl_convert_output_obj.data.details.path) / "Reports" / "IndexMetricsOut.bin",
-            data_type="FILE"
+            data_type=FILE_DATA_TYPE
         )
 
     logger.info("Outputting the manifest and fastq list rows")
@@ -162,13 +162,13 @@ def handler(event, context):
                     convert_project_id_and_data_path_to_uri(
                         project_id=bcl_convert_output_obj.project_id,
                         data_path=bcl_convert_output_obj.data.details.path + "Reports",
-                        data_type="FOLDER",
+                        data_type=FOLDER_DATA_TYPE,
                     )
                 ],
                 "destinationUri": convert_project_id_and_data_path_to_uri(
                     project_id=dest_project_data_obj.project_id,
                     data_path=Path(dest_project_data_obj.data.details.path),
-                    data_type="FOLDER",
+                    data_type=FOLDER_DATA_TYPE,
                     uri_type=ICAV2_URI_SCHEME
                 ),
             },
@@ -178,7 +178,7 @@ def handler(event, context):
                 "destinationUri": convert_project_id_and_data_path_to_uri(
                     project_id=dest_project_data_obj.project_id,
                     data_path=dest_project_data_obj.data.details.path + "InterOp",
-                    data_type="FOLDER",
+                    data_type=FOLDER_DATA_TYPE,
                     uri_type=ICAV2_URI_SCHEME
                 )
             }

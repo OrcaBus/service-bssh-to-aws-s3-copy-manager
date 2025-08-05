@@ -7,7 +7,6 @@ Handle directory outputs
 # Standard libraries
 from pathlib import Path
 from typing import Dict
-import typing
 
 # Local libraries
 from .logger import get_logger

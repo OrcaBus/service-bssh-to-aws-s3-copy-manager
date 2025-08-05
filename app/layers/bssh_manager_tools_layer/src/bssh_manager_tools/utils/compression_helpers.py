@@ -4,6 +4,7 @@
 Miscellaneous utilities for parsing through compressed strings
 """
 
+# Standard library imports
 import json
 from base64 import b64encode, b64decode
 import gzip

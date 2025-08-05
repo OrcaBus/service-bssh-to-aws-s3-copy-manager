@@ -8,7 +8,10 @@ Generate a portal run id, and a workflow run name
 # Imports
 from typing import Dict
 from os import environ
-from orcabus_api_tools.workflow import create_portal_run_id, create_workflow_run_name_from_workflow_name_workflow_version_and_portal_run_id
+from orcabus_api_tools.workflow import (
+    create_portal_run_id,
+    create_workflow_run_name_from_workflow_name_workflow_version_and_portal_run_id
+)
 
 # Globals
 WORKFLOW_RUN_PREFIX = 'umccr--automated'

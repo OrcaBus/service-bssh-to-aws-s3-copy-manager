@@ -2,10 +2,7 @@
 
 import path from 'path';
 import { StageName } from '@orcabus/platform-cdk-constructs/shared-config/accounts';
-import {
-  PIPELINE_CACHE_PREFIX,
-  pipelineCachePrefix,
-} from '@orcabus/platform-cdk-constructs/shared-config/s3';
+import { PIPELINE_CACHE_PREFIX } from '@orcabus/platform-cdk-constructs/shared-config/s3';
 
 /* Directory constants */
 export const APP_ROOT = path.join(__dirname, '../../app');

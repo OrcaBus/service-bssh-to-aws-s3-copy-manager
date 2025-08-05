@@ -13,7 +13,7 @@ from urllib.parse import urlparse, urlunparse
 from wrapica.libica_models import ProjectData
 from wrapica.project_data import convert_project_data_obj_to_uri
 from wrapica.storage_configuration import convert_icav2_uri_to_s3_uri
-from wrapica.enums import UriType
+from wrapica.utils.globals import ICAV2_URI_SCHEME
 
 
 def get_destination_uri_path(
@@ -37,7 +37,7 @@ def get_destination_uri_path(
     # Get the output path (which is the parent directory)
     dest_uri_path = str(
         urlunparse((
-            UriType.ICAV2.value,
+            ICAV2_URI_SCHEME,
             output_project_id,
             str(output_folder_path.joinpath(relative_file_path).absolute().parent) + "/",
             None, None, None
@@ -68,7 +68,7 @@ def get_dest_uri_from_src_uri(
     # Get the output path (which is the parent directory)
     dest_uri_path = str(
         urlunparse((
-            UriType.ICAV2.value,
+            ICAV2_URI_SCHEME,
             dest_project_id,
             str(dest_folder_path.joinpath(relative_file_path).absolute().parent) + "/",
             None, None, None
@@ -106,7 +106,7 @@ def generate_run_manifest(
         # The source file will not be on byob storage.
         source_file_uri = convert_project_data_obj_to_uri(
             file_obj_iter,
-            uri_type=UriType.ICAV2
+            uri_type=ICAV2_URI_SCHEME
         )
 
         # Get the output path (which is the parent directory)

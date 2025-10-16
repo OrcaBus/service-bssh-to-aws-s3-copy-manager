@@ -1,0 +1,81 @@
+{
+  "Comment": "A description of my state machine",
+  "StartAt": "Set vars",
+  "States": {
+    "Set vars": {
+      "Type": "Pass",
+      "Next": "Create new BSSH Copy Workflow Run Object",
+      "Assign": {
+        "bclConvertPortalRunId": "{% $states.input.bclConvertPortalRunId %}"
+      }
+    },
+    "Create new BSSH Copy Workflow Run Object": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Arguments": {
+        "FunctionName": "${__create_new_workflow_run_object_lambda_function_arn__}",
+        "Payload": {
+          "seqOrcabusId": "{% $seqOrcabusId %}"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Next": "New WRM Is Deployed",
+      "Output": {}
+    },
+    "New WRM Is Deployed": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Next": "Put workflow run update event",
+          "Condition": "{% ${__new_workflow_manager_is_deployed__} %}",
+          "Comment": "New workflow manager is deployed"
+        }
+      ],
+      "Default": "Put workflow run state change event"
+    },
+    "Put workflow run update event": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::events:putEvents",
+      "Arguments": {
+        "Entries": [
+          {
+            "Detail": "{% $merge([\n  $workflowRunObject,\n  {\n    \"timestamp\": $now()  }\n]) %}",
+            "DetailType": "${__workflow_run_update_detail_type__}",
+            "EventBusName": "${__event_bus_name__}",
+            "Source": "${__stack_source__}"
+          }
+        ]
+      },
+      "End": true
+    },
+    "Put workflow run state change event": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::events:putEvents",
+      "Arguments": {
+        "Entries": [
+          {
+            "Detail": "{% $merge([\n  $workflowRunObject,\n  {\n    \"timestamp\": $now()  }\n]) ~>\n/* Renamed libraries to linkedLibraries using the transform method */\n| $ | {\"linkedLibraries\": libraries}, [\"libraries\"] | ~>\n/* Renamed workflowName and workflowVersion using the transform method */\n| $ | {\"workflowName\": workflow.name, \"workflowVersion\": workflow.version}, [\"workflow\"] | %}",
+            "DetailType": "${__workflow_run_state_change_detail_type__}",
+            "EventBusName": "${__event_bus_name__}",
+            "Source": "${__stack_source__}"
+          }
+        ]
+      },
+      "End": true
+    }
+  },
+  "QueryLanguage": "JSONata"
+}

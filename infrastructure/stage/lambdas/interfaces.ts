@@ -1,32 +1,33 @@
 import { PythonFunction, PythonLayerVersion } from '@aws-cdk/aws-lambda-python-alpha';
+import { SsmParameterPaths } from '../ssm/interfaces';
 
 /** Lambda Interfaces **/
-export type LambdaNameList =
-  | 'addEngineParameters'
-  | 'addPortalRunIdAndWorkflowRunName'
-  | 'addTags'
-  | 'getLibraryObjectsFromSamplesheet'
-  | 'getManifestAndFastqListRows'
-  | 'filemanagerSync';
+export type LambdaName =
+  // DRAFT
+  | 'createNewWorkflowRunObject'
+  // Validation
+  | 'validateDraftDataCompleteSchema'
+  // RUNNING
+  | 'getWorkflowRunObject'
+  | 'getIcav2CopyJobList'
+  // POST COPY
+  | 'runFilemanagerSync'
+  | 'addPortalRunIdAttributes'
+  | 'filemanagerSyncCheck';
 
-export const lambdaNameList: Array<LambdaNameList> = [
-  'addEngineParameters',
-  'addPortalRunIdAndWorkflowRunName',
-  'addTags',
-  'getLibraryObjectsFromSamplesheet',
-  'getManifestAndFastqListRows',
-  'filemanagerSync',
+export const lambdaNameList: Array<LambdaName> = [
+  // DRAFT
+  'createNewWorkflowRunObject',
+  // Validation
+  'validateDraftDataCompleteSchema',
+  // RUNNING
+  'getWorkflowRunObject',
+  'getIcav2CopyJobList',
+  // POST COPY
+  'runFilemanagerSync',
+  'addPortalRunIdAttributes',
+  'filemanagerSyncCheck',
 ];
-
-export interface AwsEnvVars {
-  AWS_S3_CACHE_BUCKET_NAME: string;
-  AWS_S3_PRIMARY_DATA_PREFIX: string;
-}
-
-export interface BsshWorkflowEnvVars {
-  BSSH_WORKFLOW_NAME: string;
-  BSSH_WORKFLOW_VERSION: string;
-}
 
 export interface LambdaRequirementProps {
   /* Does the lambda needs a token */
@@ -38,8 +39,11 @@ export interface LambdaRequirementProps {
   /* Needs orcabus api tools layer */
   needsOrcabusApiToolsLayer?: boolean;
 
-  /* Needs AWS Env vars */
-  needsAwsEnvVars?: boolean;
+  /* Needs access to the ssm parameters */
+  needsSsmParametersAccess?: boolean;
+
+  /* Event schema registry */
+  needsSchemaRegistryAccess?: boolean;
 
   /* Needs BSSH Workflow env vars */
   needsBsshWorkflowEnvVars?: boolean;
@@ -53,42 +57,56 @@ export interface BuildLambdasProps {
   /* Custom Layers */
   bsshToolsLayer: PythonLayerVersion;
 
-  /* AWS S3 Environment Variables */
+  /* SSM Parameter paths */
+  ssmParameterPaths: SsmParameterPaths;
+
+  /* AWS S3 paths */
   awsS3PrimaryDataPrefix: string;
   awsS3CacheBucketName: string;
 }
 
 export interface BuildLambdaProps extends BuildLambdasProps {
   /* Naming formation */
-  lambdaName: LambdaNameList;
+  lambdaName: LambdaName;
 }
 
 export interface LambdaObject {
   /* Naming formation */
-  lambdaName: LambdaNameList;
+  lambdaName: LambdaName;
   /* Lambda function object */
   lambdaFunction: PythonFunction;
 }
 
-export type LambdaToRequirementsMapType = { [key in LambdaNameList]: LambdaRequirementProps };
+export type LambdaToRequirementsMapType = { [key in LambdaName]: LambdaRequirementProps };
 
 export const lambdaToRequirementsMap: LambdaToRequirementsMapType = {
-  addEngineParameters: {
-    needsAwsEnvVars: true,
-  },
-  addPortalRunIdAndWorkflowRunName: {
+  // DRAFT
+  createNewWorkflowRunObject: {
+    needsSsmParametersAccess: true,
     needsBsshWorkflowEnvVars: true,
     needsOrcabusApiToolsLayer: true,
   },
-  addTags: {},
-  getLibraryObjectsFromSamplesheet: {
+  // Validation
+  validateDraftDataCompleteSchema: {
+    needsSsmParametersAccess: true,
+    needsSchemaRegistryAccess: true,
+  },
+  // RUNNING
+  getWorkflowRunObject: {
     needsOrcabusApiToolsLayer: true,
   },
-  getManifestAndFastqListRows: {
+  getIcav2CopyJobList: {
     needsBsshLambdaLayer: true,
     needsIcav2AccessToken: true,
   },
-  filemanagerSync: {
+  // POST COPY
+  runFilemanagerSync: {
+    needsOrcabusApiToolsLayer: true,
+  },
+  addPortalRunIdAttributes: {
+    needsOrcabusApiToolsLayer: true,
+  },
+  filemanagerSyncCheck: {
     needsOrcabusApiToolsLayer: true,
     needsCacheBucketReadAccess: true,
   },

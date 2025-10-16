@@ -145,7 +145,7 @@ def handler(event, context):
             data_type=FILE_DATA_TYPE
         )
 
-    logger.info("Outputting the manifest and fastq list rows")
+    logger.info("Outputting the copy job list")
 
     return {
         "icav2CopyJobList": [

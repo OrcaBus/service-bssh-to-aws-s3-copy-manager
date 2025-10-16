@@ -1,31 +1,167 @@
 import {
+  BuildDraftRuleProps,
+  BuildReadyRuleProps,
   eventBridgeNameList,
   EventBridgeRuleObject,
   EventBridgeRuleProps,
   EventBridgeRulesProps,
 } from './interfaces';
-import { Rule } from 'aws-cdk-lib/aws-events';
+import { EventPattern, Rule } from 'aws-cdk-lib/aws-events';
 import * as events from 'aws-cdk-lib/aws-events';
 import { Construct } from 'constructs';
 import {
   BCLCONVERT_WORKFLOW_NAME,
-  BCLCONVERT_WORKFLOW_RULE_STATUS_VALUE,
-  BSSH_WORKFLOW_NAME,
+  WORKFLOW_NAME,
   WORKFLOW_MANAGER_EVENT_SOURCE,
-  WORKFLOW_RUN_STATE_CHANGE_EVENT_TYPE,
+  WORKFLOW_RUN_STATE_CHANGE_DETAIL_TYPE,
+  SUCCEEDED_STATUS,
+  DRAFT_STATUS,
+  READY_STATUS,
+  STACK_PREFIX,
 } from '../constants';
 
-function buildWorkflowRunStateChangeEventRule(scope: Construct, props: EventBridgeRuleProps): Rule {
-  return new events.Rule(scope, props.ruleName, {
-    ruleName: props.ruleName,
-    eventPattern: {
-      source: [props.eventSource],
-      detailType: [props.eventDetailType],
-      detail: {
-        status: [{ 'equals-ignore-case': props.eventStatus }],
-        workflowName: [{ 'equals-ignore-case': props.workflowName }],
-      },
+function buildUpstreamWorkflowRunStateChangeLegacySucceededEventPattern(): EventPattern {
+  return {
+    detailType: [WORKFLOW_RUN_STATE_CHANGE_DETAIL_TYPE],
+    source: [WORKFLOW_MANAGER_EVENT_SOURCE],
+    detail: {
+      workflowName: [BCLCONVERT_WORKFLOW_NAME],
+      status: [SUCCEEDED_STATUS],
     },
+  };
+}
+
+function buildWorkflowManagerLegacyDraftEventPattern(): EventPattern {
+  return {
+    detailType: [WORKFLOW_RUN_STATE_CHANGE_DETAIL_TYPE],
+    source: [WORKFLOW_MANAGER_EVENT_SOURCE],
+    detail: {
+      workflowName: [WORKFLOW_NAME],
+      status: [DRAFT_STATUS],
+    },
+  };
+}
+
+function buildWorkflowManagerLegacyReadyEventPattern(): EventPattern {
+  return {
+    detailType: [WORKFLOW_RUN_STATE_CHANGE_DETAIL_TYPE],
+    source: [WORKFLOW_MANAGER_EVENT_SOURCE],
+    detail: {
+      workflowName: [WORKFLOW_NAME],
+      status: [READY_STATUS],
+    },
+  };
+}
+
+function buildUpstreamWorkflowRunStateChangeSucceededEventPattern(): EventPattern {
+  return {
+    detailType: [WORKFLOW_RUN_STATE_CHANGE_DETAIL_TYPE],
+    source: [WORKFLOW_MANAGER_EVENT_SOURCE],
+    detail: {
+      workflow: {
+        name: [BCLCONVERT_WORKFLOW_NAME],
+      },
+      status: [SUCCEEDED_STATUS],
+    },
+  };
+}
+
+function buildWorkflowManagerDraftEventPattern(): EventPattern {
+  return {
+    detailType: [WORKFLOW_RUN_STATE_CHANGE_DETAIL_TYPE],
+    source: [WORKFLOW_MANAGER_EVENT_SOURCE],
+    detail: {
+      workflow: {
+        name: [WORKFLOW_NAME],
+      },
+      status: [DRAFT_STATUS],
+    },
+  };
+}
+
+function buildWorkflowManagerReadyEventPattern(): EventPattern {
+  return {
+    detailType: [WORKFLOW_RUN_STATE_CHANGE_DETAIL_TYPE],
+    source: [WORKFLOW_MANAGER_EVENT_SOURCE],
+    detail: {
+      workflow: {
+        name: [WORKFLOW_NAME],
+      },
+      status: [READY_STATUS],
+    },
+  };
+}
+
+function buildEventRule(scope: Construct, props: EventBridgeRuleProps): Rule {
+  return new events.Rule(scope, props.ruleName, {
+    ruleName: `${STACK_PREFIX}-${props.ruleName}`,
+    eventPattern: props.eventPattern,
+    eventBus: props.eventBus,
+  });
+}
+
+function buildUpstreamWorkflowRunStateChangeSucceededLegacyEventRule(
+  scope: Construct,
+  props: BuildDraftRuleProps
+): Rule {
+  return buildEventRule(scope, {
+    ruleName: props.ruleName,
+    eventPattern: buildUpstreamWorkflowRunStateChangeLegacySucceededEventPattern(),
+    eventBus: props.eventBus,
+  });
+}
+
+function buildWorkflowRunStateChangeDraftLegacyEventRule(
+  scope: Construct,
+  props: BuildDraftRuleProps
+): Rule {
+  return buildEventRule(scope, {
+    ruleName: props.ruleName,
+    eventPattern: buildWorkflowManagerLegacyDraftEventPattern(),
+    eventBus: props.eventBus,
+  });
+}
+
+function buildWorkflowRunStateChangeReadyLegacyEventRule(
+  scope: Construct,
+  props: BuildReadyRuleProps
+): Rule {
+  return buildEventRule(scope, {
+    ruleName: props.ruleName,
+    eventPattern: buildWorkflowManagerLegacyReadyEventPattern(),
+    eventBus: props.eventBus,
+  });
+}
+
+function buildUpstreamWorkflowRunStateChangeSucceededEventRule(
+  scope: Construct,
+  props: BuildDraftRuleProps
+): Rule {
+  return buildEventRule(scope, {
+    ruleName: props.ruleName,
+    eventPattern: buildUpstreamWorkflowRunStateChangeSucceededEventPattern(),
+    eventBus: props.eventBus,
+  });
+}
+
+function buildWorkflowRunStateChangeDraftEventRule(
+  scope: Construct,
+  props: BuildDraftRuleProps
+): Rule {
+  return buildEventRule(scope, {
+    ruleName: props.ruleName,
+    eventPattern: buildWorkflowManagerDraftEventPattern(),
+    eventBus: props.eventBus,
+  });
+}
+
+function buildWorkflowRunStateChangeReadyEventRule(
+  scope: Construct,
+  props: BuildReadyRuleProps
+): Rule {
+  return buildEventRule(scope, {
+    ruleName: props.ruleName,
+    eventPattern: buildWorkflowManagerReadyEventPattern(),
     eventBus: props.eventBus,
   });
 }
@@ -39,30 +175,65 @@ export function buildAllEventRules(
   // Iterate over the eventBridgeNameList and create the event rules
   for (const ruleName of eventBridgeNameList) {
     switch (ruleName) {
-      case 'listenBclconvertSucceededRule': {
+      // Upstream succeeded events
+      case 'upstreamSucceededEventLegacy': {
         eventBridgeRuleObjects.push({
           ruleName: ruleName,
-          ruleObject: buildWorkflowRunStateChangeEventRule(scope, {
+          ruleObject: buildUpstreamWorkflowRunStateChangeSucceededLegacyEventRule(scope, {
             ruleName: ruleName,
-            eventSource: WORKFLOW_MANAGER_EVENT_SOURCE,
             eventBus: props.eventBus,
-            eventDetailType: WORKFLOW_RUN_STATE_CHANGE_EVENT_TYPE,
-            eventStatus: BCLCONVERT_WORKFLOW_RULE_STATUS_VALUE,
-            workflowName: BCLCONVERT_WORKFLOW_NAME,
           }),
         });
         break;
       }
-      case 'listenBsshFastqCopyReadyRule': {
+      case 'upstreamSucceededEvent': {
         eventBridgeRuleObjects.push({
           ruleName: ruleName,
-          ruleObject: buildWorkflowRunStateChangeEventRule(scope, {
+          ruleObject: buildUpstreamWorkflowRunStateChangeSucceededEventRule(scope, {
             ruleName: ruleName,
-            eventSource: WORKFLOW_MANAGER_EVENT_SOURCE,
             eventBus: props.eventBus,
-            eventDetailType: WORKFLOW_RUN_STATE_CHANGE_EVENT_TYPE,
-            eventStatus: 'READY',
-            workflowName: BSSH_WORKFLOW_NAME,
+          }),
+        });
+        break;
+      }
+      // Populate Draft Data events
+      case 'wrscDraftLegacy': {
+        eventBridgeRuleObjects.push({
+          ruleName: ruleName,
+          ruleObject: buildWorkflowRunStateChangeDraftLegacyEventRule(scope, {
+            ruleName: ruleName,
+            eventBus: props.eventBus,
+          }),
+        });
+        break;
+      }
+      case 'wrscDraft': {
+        eventBridgeRuleObjects.push({
+          ruleName: ruleName,
+          ruleObject: buildWorkflowRunStateChangeDraftEventRule(scope, {
+            ruleName: ruleName,
+            eventBus: props.eventBus,
+          }),
+        });
+        break;
+      }
+      // Ready
+      case 'wrscReadyLegacy': {
+        eventBridgeRuleObjects.push({
+          ruleName: ruleName,
+          ruleObject: buildWorkflowRunStateChangeReadyLegacyEventRule(scope, {
+            ruleName: ruleName,
+            eventBus: props.eventBus,
+          }),
+        });
+        break;
+      }
+      case 'wrscReady': {
+        eventBridgeRuleObjects.push({
+          ruleName: ruleName,
+          ruleObject: buildWorkflowRunStateChangeReadyEventRule(scope, {
+            ruleName: ruleName,
+            eventBus: props.eventBus,
           }),
         });
         break;

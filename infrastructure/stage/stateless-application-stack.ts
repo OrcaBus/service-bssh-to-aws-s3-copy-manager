@@ -20,10 +20,10 @@ export class StatelessApplicationStack extends cdk.Stack {
 
   constructor(scope: Construct, id: string, props: StatelessApplicationStackProps) {
     super(scope, id, props);
-
     // Set the stage name
     this.stageName = props.stageName;
 
+    // Get the event bus
     const eventBus = events.EventBus.fromEventBusName(this, 'eventBus', props.eventBusName);
 
     // Build BSSH Tools Layer
@@ -32,8 +32,7 @@ export class StatelessApplicationStack extends cdk.Stack {
     // Build Lambdas
     const lambdas = buildAllLambdaFunctions(this, {
       bsshToolsLayer: bsshToolsLayer,
-      awsS3PrimaryDataPrefix: props.awsS3PrimaryDataPrefix,
-      awsS3CacheBucketName: props.awsS3CacheBucketName,
+      ...props,
     });
 
     // Build Step Functions

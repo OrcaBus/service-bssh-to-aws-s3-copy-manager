@@ -1,17 +1,27 @@
 import { StateMachine } from 'aws-cdk-lib/aws-stepfunctions';
 import { IEventBus } from 'aws-cdk-lib/aws-events';
-import { LambdaNameList, LambdaObject } from '../lambdas/interfaces';
+import { LambdaName, LambdaObject } from '../lambdas/interfaces';
 
-export type SfnNameList = 'bclconvertSucceededToBsshFastqCopyReady' | 'runBsshFastqCopyService';
+export type SfnName =
+  // Draft
+  | 'handleBclconvertSucceeded'
+  // Validation
+  | 'validateDraftToReady'
+  // Running
+  | 'runBsshFastqCopyService';
 
-export const sfnNameList: Array<SfnNameList> = [
-  'bclconvertSucceededToBsshFastqCopyReady',
+export const sfnNameList: Array<SfnName> = [
+  // Draft
+  'handleBclconvertSucceeded',
+  // Validation
+  'validateDraftToReady',
+  // Running
   'runBsshFastqCopyService',
 ];
 
 export interface SfnProps {
   /* Naming formation */
-  stateMachineName: SfnNameList;
+  stateMachineName: SfnName;
 }
 
 export interface SfnObject extends SfnProps {
@@ -19,41 +29,37 @@ export interface SfnObject extends SfnProps {
   stateMachineObj: StateMachine;
 }
 
-export const bclconvertSucceededToBsshFastqCopyReadyLambdaList: Array<LambdaNameList> = [
-  'addEngineParameters',
-  'addPortalRunIdAndWorkflowRunName',
-  'addTags',
-  'getLibraryObjectsFromSamplesheet',
-];
-
-export const runBsshFastqCopyServiceLambdaList: Array<LambdaNameList> = [
-  'getManifestAndFastqListRows',
-  'filemanagerSync',
-];
+export const stepFunctionToLambdasMap: Record<SfnName, LambdaName[]> = {
+  // Draft
+  handleBclconvertSucceeded: ['createNewWorkflowRunObject'],
+  // Validation
+  validateDraftToReady: ['validateDraftDataCompleteSchema'],
+  // Running
+  runBsshFastqCopyService: [
+    // RUNNING
+    'getWorkflowRunObject',
+    'getIcav2CopyJobList',
+    // POST COPY
+    'runFilemanagerSync',
+    'addPortalRunIdAttributes',
+    'filemanagerSyncCheck',
+  ],
+};
 
 export interface SfnRequirementsProps {
-  /* Lambdas */
-  requiredLambdaNameList?: LambdaNameList[];
-
   /* Event stuff */
   needsPutEvents?: boolean;
 }
 
-export const SfnRequirementsMapType: { [key in SfnNameList]: SfnRequirementsProps } = {
-  // Handle copy jobs
-  bclconvertSucceededToBsshFastqCopyReady: {
-    /* Lambdas */
-    requiredLambdaNameList: bclconvertSucceededToBsshFastqCopyReadyLambdaList,
-
-    /* Event stuff */
+export const SfnRequirementsMapType: { [key in SfnName]: SfnRequirementsProps } = {
+  // Draft
+  handleBclconvertSucceeded: {
     needsPutEvents: true,
   },
-  // Save job and internal task token
+  validateDraftToReady: {
+    needsPutEvents: true,
+  },
   runBsshFastqCopyService: {
-    /* Lambdas */
-    requiredLambdaNameList: runBsshFastqCopyServiceLambdaList,
-
-    /* Event stuff */
     needsPutEvents: true,
   },
 };

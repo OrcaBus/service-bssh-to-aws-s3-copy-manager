@@ -41,7 +41,7 @@ export function buildWrscToSfnTarget(props: AddSfnAsEventBridgeTargetProps) {
 export function buildAllEventBridgeTargets(props: EventBridgeTargetsProps) {
   for (const eventBridgeTargetsName of eventBridgeTargetsNameList) {
     switch (eventBridgeTargetsName) {
-      // Dragen / Oncoanalyser Succeeded to Glue
+      // BCLConvert Succeeded to Glue
       case 'upstreamSucceededEventLegacyToGlueSucceededEvents': {
         buildWrscLegacyToSfnTarget(<AddSfnAsEventBridgeTargetProps>{
           eventBridgeRuleObj: props.eventBridgeRuleObjects.find(

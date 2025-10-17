@@ -23,10 +23,12 @@ We then validate the DRAFT event for the 'bssh-to-aws-s3-copy' workflow by confi
   * instrumentRunId
   * basespaceRunId
   * experimentRunName
+
 * inputs:
   * bsshProjectId - the ICAv2 Project ID for BCLConvert
   * bsshAnalysisId - the ICAv2 Analysis ID for BCLConvert
   * instrumentRunId - the instrument run id
+
 * engineParameters:
   * outputUri - the S3 URI to copy the data over to
 
@@ -39,7 +41,6 @@ The application then performs the following tasks through AWS Step Functions:
    * Copy the InterOp files from the raw BCL Directory under the directory 'InterOp' under the output directory.
    * Copy the Samples and Reports from the BCLConvert directory and place them under the output directory with the name 'Samples' and 'Reports' respectively.
 3. Push a 'SUCCEEDED' event to inform the Workflow Manager that the copy is complete.
-
 
 ![Event Bus Overview](./docs/drawio-exports/bssh-to-aws-s3-copy.drawio.svg)
 

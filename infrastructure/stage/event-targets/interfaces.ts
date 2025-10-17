@@ -16,7 +16,7 @@ export type EventBridgeTargetName =
   // Validate draft to ready
   | 'draftLegacyToValidateDraftSfnTarget'
   | 'draftToValidateDraftSfnTarget'
-  // Ready to ICAv2 WES Submitted
+  // Ready to BSSH Run
   | 'readyLegacyToBsshRunSfnTarget'
   | 'readyToBsshRunSfnTarget';
 

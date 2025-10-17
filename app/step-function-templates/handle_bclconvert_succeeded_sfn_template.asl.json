@@ -6,7 +6,7 @@
       "Type": "Pass",
       "Next": "Create new BSSH Copy Workflow Run Object",
       "Assign": {
-        "bclConvertPortalRunId": "{% $states.input.bclConvertPortalRunId %}"
+        "bclconvertPortalRunId": "{% $states.input.portalRunId %}"
       }
     },
     "Create new BSSH Copy Workflow Run Object": {
@@ -15,7 +15,7 @@
       "Arguments": {
         "FunctionName": "${__create_new_workflow_run_object_lambda_function_arn__}",
         "Payload": {
-          "seqOrcabusId": "{% $seqOrcabusId %}"
+          "bclconvertPortalRunId": "{% $bclconvertPortalRunId %}"
         }
       },
       "Retry": [

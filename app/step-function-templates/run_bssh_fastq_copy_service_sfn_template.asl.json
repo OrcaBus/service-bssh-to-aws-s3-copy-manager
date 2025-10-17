@@ -5,13 +5,68 @@
   "States": {
     "Move inputs": {
       "Type": "Pass",
-      "Next": "Submit Running Event",
+      "Next": "Get workflow run object",
       "Assign": {
-        "workflowInputs": "{% $states.input %}",
+        "portalRunId": "{% $states.input.portalRunId %}",
         "iterableCount": 0
       }
     },
-    "Submit Running Event": {
+    "Get workflow run object": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Output": {},
+      "Arguments": {
+        "FunctionName": "${__get_workflow_run_object_lambda_function_arn__}",
+        "Payload": {
+          "portalRunId": "{% $portalRunId %}"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Next": "Is New workflow manager deployed",
+      "Assign": {
+        "workflowRunObject": "{% $states.result.Payload.workflowRunObject %}"
+      }
+    },
+    "Is New workflow manager deployed": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Next": "Put RUNNING Event",
+          "Condition": "{% ${__new_workflow_manager_is_deployed__} %}",
+          "Comment": "New workflow manager is deployed"
+        }
+      ],
+      "Default": "Put RUNNING Event (legacy)"
+    },
+    "Put RUNNING Event": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::events:putEvents",
+      "Arguments": {
+        "Entries": [
+          {
+            "EventBusName": "${__event_bus_name__}",
+            "DetailType": "${__workflow_run_update_detail_type__}",
+            "Source": "${__stack_event_source__}",
+            "Detail": "{% /* Merge workflow event with new values */\n[\n  $workflowRunObject,\n  {\n    \"timestamp\": $states.context.State.EnteredTime,\n    \"status\": \"RUNNING\"\n  }\n] ~> \n$merge\n %}"
+          }
+        ]
+      },
+      "Next": "Get Manifest"
+    },
+    "Put RUNNING Event (legacy)": {
       "Type": "Task",
       "Resource": "arn:aws:states:::events:putEvents",
       "Arguments": {
@@ -20,23 +75,7 @@
             "EventBusName": "${__event_bus_name__}",
             "DetailType": "${__workflow_run_state_change_detail_type__}",
             "Source": "${__stack_event_source__}",
-            "Detail": {
-              "status": "RUNNING",
-              "timestamp": "{% $states.context.State.EnteredTime %}",
-              "portalRunId": "{% $workflowInputs.portalRunId %}",
-              "workflowName": "{% $workflowInputs.workflowName %}",
-              "workflowVersion": "{% $workflowInputs.workflowVersion %}",
-              "workflowRunName": "{% $workflowInputs.workflowRunName %}",
-              "linkedLibraries": "{% $workflowInputs.linkedLibraries %}",
-              "payload": {
-                "version": "{% $workflowInputs.payload.version %}",
-                "data": {
-                  "inputs": "{% $workflowInputs.payload.data.inputs %}",
-                  "engineParameters": "{% $workflowInputs.payload.data.engineParameters %}",
-                  "tags": "{% $workflowInputs.payload.data.tags %}"
-                }
-              }
-            }
+            "Detail": "{% /* Merge workflow event with new values */\n[\n  $workflowRunObject,\n  {\n    \"timestamp\": $states.context.State.EnteredTime,\n    \"status\": \"RUNNING\"\n  }\n] ~> \n$merge ~>\n/* Convert libraries */\n| $ | {\"linkedLibraries\": libraries}, [\"libraries\"] | ~>\n/* Convert Workflow */\n| $ | {\"workflowName\": workflow.name, \"workflowVersion\": workflow.version}, [\"workflow\"] |\n %}"
           }
         ]
       },
@@ -60,11 +99,11 @@
       ],
       "Next": "For each copy job request",
       "Arguments": {
-        "FunctionName": "${__get_manifest_and_fastq_list_rows_lambda_function_arn__}",
+        "FunctionName": "${__get_icav2_copy_job_list_lambda_function_arn__}",
         "Payload": {
-          "projectId": "{% $workflowInputs.payload.data.inputs.bsshProjectId %}",
-          "analysisId": "{% $workflowInputs.payload.data.inputs.bsshAnalysisId %}",
-          "outputUri": "{% $workflowInputs.payload.data.engineParameters.outputUri %}"
+          "projectId": "{% $workflowRunObject.payload.data.inputs.bsshProjectId %}",
+          "analysisId": "{% $workflowRunObject.payload.data.inputs.bsshAnalysisId %}",
+          "outputUri": "{% $workflowRunObject.payload.data.engineParameters.outputUri %}"
         }
       },
       "Assign": {
@@ -112,6 +151,59 @@
           }
         }
       },
+      "Next": "Run Filemanager sync"
+    },
+    "Run Filemanager sync": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Arguments": {
+        "FunctionName": "${__run_filemanager_sync_lambda_function_arn__}",
+        "Payload": {
+          "s3Prefix": "{% $workflowRunObject.payload.data.engineParameters.outputUri %}"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Next": "Add portal run id attributes",
+      "Output": {}
+    },
+    "Add portal run id attributes": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Output": "{% $states.result.Payload %}",
+      "Arguments": {
+        "FunctionName": "${__add_portal_run_id_attributes_lambda_function_arn__}",
+        "Payload": {
+          "outputUri": "{% $workflowRunObject.payload.data.engineParameters.outputUri %}",
+          "portalRunId": "{% $portalRunId %}"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
       "Next": "Wait for filemanager sync"
     },
     "Wait for filemanager sync": {
@@ -120,7 +212,7 @@
       "Arguments": {
         "FunctionName": "${__filemanager_sync_lambda_function_arn__}",
         "Payload": {
-          "s3Prefix": "{% $workflowInputs.payload.data.engineParameters.outputUri %}"
+          "s3Prefix": "{% $workflowRunObject.payload.data.engineParameters.outputUri %}"
         }
       },
       "Retry": [
@@ -146,7 +238,7 @@
       "Type": "Choice",
       "Choices": [
         {
-          "Next": "Submit Succeeded Event",
+          "Next": "Is New Workflow Manager Deployed",
           "Condition": "{% $isSynced %}",
           "Comment": "Is Synced"
         },
@@ -158,15 +250,41 @@
       ],
       "Default": "Wait 5 Seconds"
     },
+    "Is New Workflow Manager Deployed": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Next": "Put SUCCEEDED Event",
+          "Condition": "{% ${__new_workflow_manager_is_deployed__} %}",
+          "Comment": "New Workflow Manager is deployed"
+        }
+      ],
+      "Default": "Put SUCCEEDED Event (legacy)"
+    },
+    "Put SUCCEEDED Event": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::events:putEvents",
+      "Arguments": {
+        "Entries": [
+          {
+            "EventBusName": "${__event_bus_name__}",
+            "DetailType": "${__workflow_run_update_detail_type__}",
+            "Source": "${__stack_event_source__}",
+            "Detail": "{% /* Merge workflow event with new values */\n[\n  $workflowRunObject,\n  {\n    \"timestamp\": $states.context.State.EnteredTime,\n    \"status\": \"SUCCEEDED\"\n  }\n] ~> \n$merge\n %}"
+          }
+        ]
+      },
+      "End": true
+    },
     "Wait 5 Seconds": {
       "Type": "Wait",
       "Seconds": 5,
-      "Next": "Wait for filemanager sync",
+      "Next": "Run Filemanager sync",
       "Assign": {
         "iterableCount": "{% $iterableCount + 1 %}"
       }
     },
-    "Submit Succeeded Event": {
+    "Put SUCCEEDED Event (legacy)": {
       "Type": "Task",
       "Resource": "arn:aws:states:::events:putEvents",
       "Arguments": {
@@ -175,27 +293,7 @@
             "EventBusName": "${__event_bus_name__}",
             "DetailType": "${__workflow_run_state_change_detail_type__}",
             "Source": "${__stack_event_source__}",
-            "Detail": {
-              "status": "SUCCEEDED",
-              "timestamp": "{% $states.context.State.EnteredTime %}",
-              "portalRunId": "{% $workflowInputs.portalRunId %}",
-              "workflowName": "{% $workflowInputs.workflowName %}",
-              "workflowVersion": "{% $workflowInputs.workflowVersion %}",
-              "workflowRunName": "{% $workflowInputs.workflowRunName %}",
-              "linkedLibraries": "{% $workflowInputs.linkedLibraries %}",
-              "payload": {
-                "version": "{% $workflowInputs.payload.version %}",
-                "data": {
-                  "inputs": "{% $workflowInputs.payload.data.inputs %}",
-                  "engineParameters": "{% $workflowInputs.payload.data.engineParameters %}",
-                  "outputs": {
-                    "outputUri": "{% $workflowInputs.payload.data.engineParameters.outputUri %}",
-                    "instrumentRunId": "{% $workflowInputs.payload.data.inputs.instrumentRunId %}"
-                  },
-                  "tags": "{% $workflowInputs.payload.data.tags %}"
-                }
-              }
-            }
+            "Detail": "{% /* Merge workflow event with new values */\n[\n  $workflowRunObject,\n  {\n    \"timestamp\": $states.context.State.EnteredTime,\n    \"status\": \"SUCCEEDED\"\n  }\n] ~> \n$merge ~>\n/* Convert libraries */\n| $ | {\"linkedLibraries\": libraries}, [\"libraries\"] | ~>\n/* Convert Workflow */\n| $ | {\"workflowName\": workflow.name, \"workflowVersion\": workflow.version}, [\"workflow\"] |\n %}"
           }
         ]
       },

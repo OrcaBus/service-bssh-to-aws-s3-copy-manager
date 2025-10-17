@@ -1,12 +1,26 @@
-import { IEventBus, Rule } from 'aws-cdk-lib/aws-events';
+import { EventPattern, IEventBus, Rule } from 'aws-cdk-lib/aws-events';
 
-export type EventBridgeNameList = 'listenBclconvertSucceededRule' | 'listenBsshFastqCopyReadyRule';
+export type EventBridgeNameList =
+  // Glue succeeded
+  | 'upstreamSucceededEventLegacy'
+  | 'upstreamSucceededEvent'
+  // Draft Events
+  | 'wrscDraftLegacy'
+  | 'wrscDraft'
+  // Pre-ready
+  | 'wrscReadyLegacy'
+  | 'wrscReady';
 
 export const eventBridgeNameList: EventBridgeNameList[] = [
-  /* Listen to bclconvert workflow status changes */
-  'listenBclconvertSucceededRule',
-  /* Listen to bssh Fastq Copy Ready rule */
-  'listenBsshFastqCopyReadyRule',
+  // Glue succeeded
+  'upstreamSucceededEventLegacy',
+  'upstreamSucceededEvent',
+  // Draft Events
+  'wrscDraftLegacy',
+  'wrscDraft',
+  // Pre-ready
+  'wrscReadyLegacy',
+  'wrscReady',
 ];
 
 export interface EventBridgeRuleProps {
@@ -16,15 +30,8 @@ export interface EventBridgeRuleProps {
   /* Event bus */
   eventBus: IEventBus;
 
-  /* Event Detail Type */
-  eventDetailType: string;
-  eventSource: string;
-
-  /* Event Status */
-  eventStatus: string;
-
-  /* We also require the workflow name for both rules */
-  workflowName: string;
+  /* Event Pattern */
+  eventPattern: EventPattern;
 }
 
 export interface EventBridgeRulesProps {
@@ -36,3 +43,6 @@ export interface EventBridgeRuleObject {
   ruleName: EventBridgeNameList;
   ruleObject: Rule;
 }
+
+export type BuildDraftRuleProps = Omit<EventBridgeRuleProps, 'eventPattern'>;
+export type BuildReadyRuleProps = Omit<EventBridgeRuleProps, 'eventPattern'>;

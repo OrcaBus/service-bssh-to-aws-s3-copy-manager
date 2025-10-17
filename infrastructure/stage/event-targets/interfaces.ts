@@ -3,13 +3,36 @@ import { Rule } from 'aws-cdk-lib/aws-events';
 import { EventBridgeRuleObject } from '../event-rules/interfaces';
 import { SfnObject } from '../step-functions/interfaces';
 
-export type EventBridgeTargetsNameList =
-  | 'bclconvertSucceededToBsshFastqCopyReadySfn'
-  | 'bsshFastqCopyReadyToBsshFastqCopyServiceSfn';
+/**
+ * EventBridge Target Interfaces
+ */
+export type EventBridgeTargetName =
+  // Upstream Succeeded
+  | 'upstreamSucceededEventLegacyToGlueSucceededEvents'
+  | 'upstreamSucceededEventToGlueSucceededEvents'
+  // Populate draft data event targets
+  | 'draftLegacyToPopulateDraftDataSfnTarget'
+  | 'draftToPopulateDraftDataSfnTarget'
+  // Validate draft to ready
+  | 'draftLegacyToValidateDraftSfnTarget'
+  | 'draftToValidateDraftSfnTarget'
+  // Ready to BSSH Run
+  | 'readyLegacyToBsshRunSfnTarget'
+  | 'readyToBsshRunSfnTarget';
 
-export const eventBridgeTargetsNameList: Array<EventBridgeTargetsNameList> = [
-  'bclconvertSucceededToBsshFastqCopyReadySfn',
-  'bsshFastqCopyReadyToBsshFastqCopyServiceSfn',
+export const eventBridgeTargetsNameList: EventBridgeTargetName[] = [
+  // Upstream Succeeded
+  'upstreamSucceededEventLegacyToGlueSucceededEvents',
+  'upstreamSucceededEventToGlueSucceededEvents',
+  // Populate draft data event targets
+  'draftLegacyToPopulateDraftDataSfnTarget',
+  'draftToPopulateDraftDataSfnTarget',
+  // Validate draft to ready
+  'draftLegacyToValidateDraftSfnTarget',
+  'draftToValidateDraftSfnTarget',
+  // Ready to ICAv2 WES Submitted
+  'readyLegacyToBsshRunSfnTarget',
+  'readyToBsshRunSfnTarget',
 ];
 
 export interface AddSfnAsEventBridgeTargetProps {

@@ -70,6 +70,9 @@ export interface BuildSfnProps extends SfnProps {
 
   /* Event Stuff */
   eventBus: IEventBus;
+
+  /* New workflow manager deployed */
+  isNewWorkflowManagerDeployed: boolean;
 }
 
 export interface BuildSfnsProps {
@@ -78,6 +81,9 @@ export interface BuildSfnsProps {
 
   /* Event Stuff */
   eventBus: IEventBus;
+
+  /* New workflow manager deployed */
+  isNewWorkflowManagerDeployed: boolean;
 }
 
 export interface WirePermissionsProps extends BuildSfnProps {

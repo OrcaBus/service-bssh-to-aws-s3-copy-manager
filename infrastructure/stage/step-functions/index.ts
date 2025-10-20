@@ -55,6 +55,10 @@ function createStateMachineDefinitionSubstitutions(props: BuildSfnProps): {
   /* Substitute the bssh payload version in the state machine definition */
   definitionSubstitutions['__bssh_payload_version__'] = PAYLOAD_VERSION;
 
+  /* Is the new workflow manager enabled */
+  definitionSubstitutions['__is_workflow_manager_enabled__'] =
+    props.isNewWorkflowManagerDeployed.toString();
+
   return definitionSubstitutions;
 }
 

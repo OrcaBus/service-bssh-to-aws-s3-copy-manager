@@ -19,16 +19,6 @@ export const sfnNameList: Array<SfnName> = [
   'runBsshFastqCopyService',
 ];
 
-export interface SfnProps {
-  /* Naming formation */
-  stateMachineName: SfnName;
-}
-
-export interface SfnObject extends SfnProps {
-  /* The state machine object */
-  stateMachineObj: StateMachine;
-}
-
 export const stepFunctionToLambdasMap: Record<SfnName, LambdaName[]> = {
   // Draft
   handleBclconvertSucceeded: ['createNewWorkflowRunObject'],
@@ -64,7 +54,7 @@ export const SfnRequirementsMapType: { [key in SfnName]: SfnRequirementsProps } 
   },
 };
 
-export interface BuildSfnProps extends SfnProps {
+export interface BuildSfnsProps {
   /* Lambdas */
   lambdas: LambdaObject[];
 
@@ -75,15 +65,16 @@ export interface BuildSfnProps extends SfnProps {
   isNewWorkflowManagerDeployed: boolean;
 }
 
-export interface BuildSfnsProps {
-  /* Lambdas */
-  lambdas: LambdaObject[];
+export interface BuildSfnProps extends BuildSfnsProps {
+  /* State Machine Name */
+  stateMachineName: SfnName;
+}
 
-  /* Event Stuff */
-  eventBus: IEventBus;
-
-  /* New workflow manager deployed */
-  isNewWorkflowManagerDeployed: boolean;
+export interface SfnObject {
+  /* State Machine Name */
+  stateMachineName: SfnName;
+  /* State Machine Object */
+  stateMachineObj: StateMachine;
 }
 
 export interface WirePermissionsProps extends BuildSfnProps {

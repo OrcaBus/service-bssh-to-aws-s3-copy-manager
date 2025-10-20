@@ -32,6 +32,9 @@ export interface StatelessApplicationStackConfig extends cdk.StackProps {
   awsS3CacheBucketName: string;
   awsS3PrimaryDataPrefix: string;
 
+  /* Is new workflow manager deployed */
+  isNewWorkflowManagerDeployed: boolean;
+
   /* SSM Parameter paths */
   ssmParameterPaths: SsmParameterPaths;
 }

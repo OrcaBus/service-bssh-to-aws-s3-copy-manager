@@ -60,6 +60,13 @@ export const SUCCEEDED_STATUS = 'SUCCEEDED';
 export const SCHEMA_REGISTRY_NAME = DATA_SCHEMA_REGISTRY_NAME;
 export const SSM_SCHEMA_ROOT = path.join(SSM_PARAMETER_PATH_PREFIX, 'schemas');
 
+/* Future proofing */
+export const NEW_WORKFLOW_MANAGER_IS_DEPLOYED: Record<StageName, boolean> = {
+  BETA: true,
+  GAMMA: true,
+  PROD: false,
+};
+
 /* S3 bucket constants */
 export const AWS_S3_PRIMARY_DATA_PREFIX: Record<StageName, string> = {
   ['BETA']: PIPELINE_CACHE_PREFIX['BETA'] + 'primary/',

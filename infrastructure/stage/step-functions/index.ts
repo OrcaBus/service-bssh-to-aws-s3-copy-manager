@@ -13,9 +13,11 @@ import {
   PAYLOAD_VERSION,
   ICAV2_DATA_COPY_DETAIL_TYPE,
   STACK_PREFIX,
-  STACK_EVENT_SOURCE,
+  STACK_SOURCE,
   STEP_FUNCTIONS_DIR,
   WORKFLOW_RUN_STATE_CHANGE_DETAIL_TYPE,
+  WORKFLOW_RUN_UPDATE_DETAIL_TYPE,
+  READY_STATUS,
 } from '../constants';
 import { camelCaseToSnakeCase } from '../utils';
 import { Construct } from 'constructs';
@@ -37,27 +39,30 @@ function createStateMachineDefinitionSubstitutions(props: BuildSfnProps): {
       lambdaObject.lambdaFunction.currentVersion.functionArn;
   }
 
+  /* General substitutions */
+  definitionSubstitutions['__ready_event_status__'] = READY_STATUS;
+
   /* Substitute the event bus in the state machine definition */
   if (props.eventBus) {
     definitionSubstitutions['__event_bus_name__'] = props.eventBus.eventBusName;
+
+    /* Substitute the event detail type in the state machine definition */
+    definitionSubstitutions['__workflow_run_state_change_detail_type__'] =
+      WORKFLOW_RUN_STATE_CHANGE_DETAIL_TYPE;
+    definitionSubstitutions['__workflow_run_update_detail_type__'] =
+      WORKFLOW_RUN_UPDATE_DETAIL_TYPE;
+    /* Substitute the event bridge rule name in the state machine definition */
+    definitionSubstitutions['__icav2_data_copy_detail_type__'] = ICAV2_DATA_COPY_DETAIL_TYPE;
+
+    /* Substitute the event source in the state machine definition */
+    definitionSubstitutions['__stack_source__'] = STACK_SOURCE;
+    /* Is the new workflow manager enabled */
+    definitionSubstitutions['__new_workflow_manager_is_deployed__'] =
+      props.isNewWorkflowManagerDeployed.toString();
   }
-
-  /* Substitute the event bridge rule name in the state machine definition */
-  definitionSubstitutions['__icav2_data_copy_detail_type__'] = ICAV2_DATA_COPY_DETAIL_TYPE;
-
-  /* Substitute the event detail type in the state machine definition */
-  definitionSubstitutions['__workflow_run_state_change_detail_type__'] =
-    WORKFLOW_RUN_STATE_CHANGE_DETAIL_TYPE;
-
-  /* Substitute the event source in the state machine definition */
-  definitionSubstitutions['__stack_event_source__'] = STACK_EVENT_SOURCE;
 
   /* Substitute the bssh payload version in the state machine definition */
   definitionSubstitutions['__bssh_payload_version__'] = PAYLOAD_VERSION;
-
-  /* Is the new workflow manager enabled */
-  definitionSubstitutions['__is_workflow_manager_enabled__'] =
-    props.isNewWorkflowManagerDeployed.toString();
 
   return definitionSubstitutions;
 }

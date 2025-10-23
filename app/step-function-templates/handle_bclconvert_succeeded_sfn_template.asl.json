@@ -32,6 +32,9 @@
           "JitterStrategy": "FULL"
         }
       ],
+      "Assign": {
+        "workflowRunObject": "{% $states.result.Payload.workflowRunObject %}"
+      },
       "Next": "New WRM Is Deployed",
       "Output": {}
     },

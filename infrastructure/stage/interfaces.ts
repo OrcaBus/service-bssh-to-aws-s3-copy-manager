@@ -28,10 +28,6 @@ export interface StatelessApplicationStackConfig extends cdk.StackProps {
   /* Event stuff */
   eventBusName: string;
 
-  /* AWS S3 stuff */
-  awsS3CacheBucketName: string;
-  awsS3PrimaryDataPrefix: string;
-
   /* Is new workflow manager deployed */
   isNewWorkflowManagerDeployed: boolean;
 

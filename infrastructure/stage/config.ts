@@ -1,7 +1,6 @@
 import { StageName } from '@orcabus/platform-cdk-constructs/shared-config/accounts';
 
 import {
-  AWS_S3_PRIMARY_DATA_PREFIX,
   EVENT_BUS_NAME,
   NEW_WORKFLOW_MANAGER_IS_DEPLOYED,
   PAYLOAD_VERSION,
@@ -11,11 +10,12 @@ import {
   SSM_PARAMETER_PATH_PREFIX,
   SSM_PARAMETER_PATH_WORKFLOW_NAME,
   WORKFLOW_NAME,
+  WORKFLOW_OUTPUT_PREFIX,
   WORKFLOW_VERSION,
 } from './constants';
 import { StatefulApplicationStackConfig, StatelessApplicationStackConfig } from './interfaces';
-import { PIPELINE_CACHE_BUCKET } from '@orcabus/platform-cdk-constructs/shared-config/s3';
 import { SsmParameterPaths, SsmParameterValues } from './ssm/interfaces';
+import { substituteBucketConstants } from './utils';
 
 export const getSsmParameterValues = (stage: StageName): SsmParameterValues => {
   return {
@@ -27,7 +27,7 @@ export const getSsmParameterValues = (stage: StageName): SsmParameterValues => {
     payloadVersion: PAYLOAD_VERSION,
 
     // Engine Parameters
-    outputPrefix: AWS_S3_PRIMARY_DATA_PREFIX[stage],
+    outputPrefix: substituteBucketConstants(WORKFLOW_OUTPUT_PREFIX, stage),
   };
 };
 
@@ -63,10 +63,6 @@ export const getStatelessStackProps = (stage: StageName): StatelessApplicationSt
 
     /* Event stuff */
     eventBusName: EVENT_BUS_NAME,
-
-    /* S3 Stuff */
-    awsS3CacheBucketName: PIPELINE_CACHE_BUCKET[stage],
-    awsS3PrimaryDataPrefix: AWS_S3_PRIMARY_DATA_PREFIX[stage],
 
     /* Is new workflow manager deployed */
     isNewWorkflowManagerDeployed: NEW_WORKFLOW_MANAGER_IS_DEPLOYED[stage],

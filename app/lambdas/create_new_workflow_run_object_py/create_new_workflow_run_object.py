@@ -40,10 +40,15 @@ def handler(event, context):
     portal_run_id = create_portal_run_id()
 
     # Get the workflow, from the workflow name and version
-    workflow = list_workflows(
-        workflow_name=workflow_name,
-        workflow_version=workflow_version
-    )
+    try:
+        workflow = next(iter(list_workflows(
+            workflow_name=workflow_name,
+            workflow_version=workflow_version
+        )))
+    except StopIteration:
+        raise ValueError(
+            f"Workflow with name '{workflow_name}' and version '{workflow_version}' not found."
+        )
 
     # Generate the workflow run name
     workflow_run_name = create_workflow_run_name_from_workflow_name_workflow_version_and_portal_run_id(
@@ -61,7 +66,7 @@ def handler(event, context):
     )['libraries']
 
     # Get values repeated through the payload
-    instrument_run_id = bclconvert_payload['data']['engineParameters']['instrumentRunId']
+    instrument_run_id = bclconvert_payload['data']['tags']['instrumentRunId']
 
     output_uri_prefix_object = urlparse(
         output_uri_prefix
@@ -81,7 +86,7 @@ def handler(event, context):
                 "outputUri": str(urlunparse((
                     output_uri_prefix_object.scheme,
                     output_uri_prefix_object.netloc,
-                    str(Path(output_uri_prefix_object.path) / instrument_run_id / portal_run_id),
+                    str(Path(output_uri_prefix_object.path) / instrument_run_id / portal_run_id) + "/",
                     None, None, None
                 )))
             }
@@ -89,7 +94,7 @@ def handler(event, context):
     }
 
     return {
-        "eventDetail": {
+        "workflowRunObject": {
             "status": "DRAFT",
             "portalRunId": portal_run_id,
             "workflow": workflow,

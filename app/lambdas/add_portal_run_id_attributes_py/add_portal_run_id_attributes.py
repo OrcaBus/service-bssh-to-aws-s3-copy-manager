@@ -3,7 +3,7 @@
 """
 Add portal run id attributes from the filemanager
 """
-import json
+
 # Standard imports
 from urllib.parse import urlparse
 from pathlib import Path

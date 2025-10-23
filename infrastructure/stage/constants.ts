@@ -2,7 +2,6 @@
 
 import path from 'path';
 import { StageName } from '@orcabus/platform-cdk-constructs/shared-config/accounts';
-import { PIPELINE_CACHE_PREFIX } from '@orcabus/platform-cdk-constructs/shared-config/s3';
 import { DATA_SCHEMA_REGISTRY_NAME } from '@orcabus/platform-cdk-constructs/shared-config/event-bridge';
 
 /* Directory constants */

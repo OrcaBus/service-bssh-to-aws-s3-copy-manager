@@ -25,7 +25,7 @@ function buildUpstreamWorkflowRunStateChangeLegacySucceededEventPattern(): Event
     detailType: [WORKFLOW_RUN_STATE_CHANGE_DETAIL_TYPE],
     source: [WORKFLOW_MANAGER_EVENT_SOURCE],
     detail: {
-      workflowName: [BCLCONVERT_WORKFLOW_NAME],
+      workflowName: [{ 'equals-ignore-case': BCLCONVERT_WORKFLOW_NAME }],
       status: [SUCCEEDED_STATUS],
     },
   };
@@ -59,7 +59,7 @@ function buildUpstreamWorkflowRunStateChangeSucceededEventPattern(): EventPatter
     source: [WORKFLOW_MANAGER_EVENT_SOURCE],
     detail: {
       workflow: {
-        name: [BCLCONVERT_WORKFLOW_NAME],
+        name: [{ 'equals-ignore-case': BCLCONVERT_WORKFLOW_NAME }],
       },
       status: [SUCCEEDED_STATUS],
     },

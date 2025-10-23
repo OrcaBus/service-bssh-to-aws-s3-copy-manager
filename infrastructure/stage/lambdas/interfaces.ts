@@ -48,8 +48,8 @@ export interface LambdaRequirementProps {
   /* Needs BSSH Workflow env vars */
   needsBsshWorkflowEnvVars?: boolean;
 
-  /* Needs Cache Bucket Read Access */
-  needsCacheBucketReadAccess?: boolean;
+  /* Some lambdas may need an extended timeout */
+  needsExtendedTimeout?: boolean;
 }
 
 export interface BuildLambdasProps {
@@ -59,10 +59,6 @@ export interface BuildLambdasProps {
 
   /* SSM Parameter paths */
   ssmParameterPaths: SsmParameterPaths;
-
-  /* AWS S3 paths */
-  awsS3PrimaryDataPrefix: string;
-  awsS3CacheBucketName: string;
 }
 
 export interface BuildLambdaProps extends BuildLambdasProps {
@@ -108,6 +104,7 @@ export const lambdaToRequirementsMap: LambdaToRequirementsMapType = {
   },
   filemanagerSyncCheck: {
     needsOrcabusApiToolsLayer: true,
-    needsCacheBucketReadAccess: true,
+    needsIcav2AccessToken: true,
+    needsExtendedTimeout: true,
   },
 };

@@ -59,7 +59,7 @@
           {
             "EventBusName": "${__event_bus_name__}",
             "DetailType": "${__workflow_run_update_detail_type__}",
-            "Source": "${__stack_event_source__}",
+            "Source": "${__stack_source__}",
             "Detail": "{% /* Merge workflow event with new values */\n[\n  $workflowRunObject,\n  {\n    \"timestamp\": $states.context.State.EnteredTime,\n    \"status\": \"RUNNING\"\n  }\n] ~> \n$merge\n %}"
           }
         ]
@@ -74,7 +74,7 @@
           {
             "EventBusName": "${__event_bus_name__}",
             "DetailType": "${__workflow_run_state_change_detail_type__}",
-            "Source": "${__stack_event_source__}",
+            "Source": "${__stack_source__}",
             "Detail": "{% /* Merge workflow event with new values */\n[\n  $workflowRunObject,\n  {\n    \"timestamp\": $states.context.State.EnteredTime,\n    \"status\": \"RUNNING\"\n  }\n] ~> \n$merge ~>\n/* Convert libraries */\n| $ | {\"linkedLibraries\": libraries}, [\"libraries\"] | ~>\n/* Convert Workflow */\n| $ | {\"workflowName\": workflow.name, \"workflowVersion\": workflow.version}, [\"workflow\"] |\n %}"
           }
         ]
@@ -128,7 +128,7 @@
                 {
                   "EventBusName": "${__event_bus_name__}",
                   "DetailType": "${__icav2_data_copy_detail_type__}",
-                  "Source": "${__stack_event_source__}",
+                  "Source": "${__stack_source__}",
                   "Detail": {
                     "payload": {
                       "sourceUriList": "{% $states.input.sourceUriList %}",
@@ -210,7 +210,7 @@
       "Type": "Task",
       "Resource": "arn:aws:states:::lambda:invoke",
       "Arguments": {
-        "FunctionName": "${__filemanager_sync_lambda_function_arn__}",
+        "FunctionName": "${__filemanager_sync_check_lambda_function_arn__}",
         "Payload": {
           "s3Prefix": "{% $workflowRunObject.payload.data.engineParameters.outputUri %}"
         }
@@ -269,7 +269,7 @@
           {
             "EventBusName": "${__event_bus_name__}",
             "DetailType": "${__workflow_run_update_detail_type__}",
-            "Source": "${__stack_event_source__}",
+            "Source": "${__stack_source__}",
             "Detail": "{% /* Merge workflow event with new values */\n[\n  $workflowRunObject,\n  {\n    \"timestamp\": $states.context.State.EnteredTime,\n    \"status\": \"SUCCEEDED\"\n  }\n] ~> \n$merge\n %}"
           }
         ]
@@ -292,7 +292,7 @@
           {
             "EventBusName": "${__event_bus_name__}",
             "DetailType": "${__workflow_run_state_change_detail_type__}",
-            "Source": "${__stack_event_source__}",
+            "Source": "${__stack_source__}",
             "Detail": "{% /* Merge workflow event with new values */\n[\n  $workflowRunObject,\n  {\n    \"timestamp\": $states.context.State.EnteredTime,\n    \"status\": \"SUCCEEDED\"\n  }\n] ~> \n$merge ~>\n/* Convert libraries */\n| $ | {\"linkedLibraries\": libraries}, [\"libraries\"] | ~>\n/* Convert Workflow */\n| $ | {\"workflowName\": workflow.name, \"workflowVersion\": workflow.version}, [\"workflow\"] |\n %}"
           }
         ]

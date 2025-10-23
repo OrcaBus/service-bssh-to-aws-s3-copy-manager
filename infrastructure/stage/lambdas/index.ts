@@ -7,16 +7,22 @@ import {
 } from './interfaces';
 import { getPythonUvDockerImage, PythonUvFunction } from '@orcabus/platform-cdk-constructs/lambda';
 import path from 'path';
-import { LAMBDA_DIR, LAYERS_DIR, SCHEMA_REGISTRY_NAME, SSM_SCHEMA_ROOT } from '../constants';
+import {
+  LAMBDA_DIR,
+  LAYERS_DIR,
+  SCHEMA_REGISTRY_NAME,
+  SSM_PARAMETER_PATH_PREFIX,
+  SSM_SCHEMA_ROOT,
+} from '../constants';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
-import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as cdk from 'aws-cdk-lib';
 import { Duration } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { camelCaseToSnakeCase } from '../utils';
+import { camelCaseToKebabCase, camelCaseToSnakeCase } from '../utils';
 import { PythonLayerVersion } from '@aws-cdk/aws-lambda-python-alpha';
 import { NagSuppressions } from 'cdk-nag';
+import { SchemaNames } from '../event-schemas/interfaces';
 
 export function buildBsshToolsLayer(scope: Construct): PythonLayerVersion {
   /**
@@ -55,10 +61,12 @@ function buildLambdaFunction(scope: Construct, props: BuildLambdaProps): LambdaO
     architecture: lambda.Architecture.ARM_64,
     index: lambdaNameToSnakeCase + '.py',
     handler: 'handler',
-    timeout: Duration.seconds(60),
+    timeout: lambdaRequirementsMap.needsExtendedTimeout
+      ? Duration.seconds(900)
+      : Duration.seconds(60),
     includeOrcabusApiToolsLayer: lambdaRequirementsMap.needsOrcabusApiToolsLayer,
     includeIcav2Layer: lambdaRequirementsMap.needsIcav2AccessToken,
-    memorySize: props.lambdaName === 'getIcav2CopyJobList' ? 1024 : undefined,
+    memorySize: lambdaRequirementsMap.needsIcav2AccessToken ? 1024 : undefined,
   });
 
   /* Do we need the bssh tools layer? */
@@ -75,7 +83,7 @@ function buildLambdaFunction(scope: Construct, props: BuildLambdaProps): LambdaO
       new iam.PolicyStatement({
         actions: ['ssm:GetParameter'],
         resources: [
-          `arn:aws:ssm:${cdk.Aws.REGION}:${cdk.Aws.ACCOUNT_ID}:parameter${path.join(SSM_SCHEMA_ROOT, '/*')}`,
+          `arn:aws:ssm:${cdk.Aws.REGION}:${cdk.Aws.ACCOUNT_ID}:parameter${path.join(SSM_PARAMETER_PATH_PREFIX, '/*')}`,
         ],
       })
     );
@@ -122,6 +130,19 @@ function buildLambdaFunction(scope: Construct, props: BuildLambdaProps): LambdaO
     );
   }
 
+  /*
+    Special if the lambdaName is 'validateDraftCompleteSchema', we need to add in the ssm parameters
+    to the REGISTRY_NAME and SCHEMA_NAME
+   */
+  if (props.lambdaName === 'validateDraftDataCompleteSchema') {
+    const draftSchemaName: SchemaNames = 'completeDataDraft';
+    lambdaFunction.addEnvironment('SSM_REGISTRY_NAME', path.join(SSM_SCHEMA_ROOT, 'registry'));
+    lambdaFunction.addEnvironment(
+      'SSM_SCHEMA_NAME',
+      path.join(SSM_SCHEMA_ROOT, camelCaseToKebabCase(draftSchemaName), 'latest')
+    );
+  }
+
   /* Add bssh workflow env vars */
   if (lambdaRequirementsMap.needsBsshWorkflowEnvVars) {
     lambdaFunction.addEnvironment(
@@ -139,28 +160,6 @@ function buildLambdaFunction(scope: Construct, props: BuildLambdaProps): LambdaO
     lambdaFunction.addEnvironment(
       'PRIMARY_DATA_OUTPUT_URI_PREFIX_SSM_PARAMETER_NAME',
       props.ssmParameterPaths.outputPrefix
-    );
-  }
-
-  /* Add in the file system access */
-  if (lambdaRequirementsMap.needsCacheBucketReadAccess) {
-    const s3CacheBucketObj = s3.Bucket.fromBucketName(
-      scope,
-      props.lambdaName + 'CacheBucket',
-      props.awsS3CacheBucketName
-    );
-    s3CacheBucketObj.grantRead(lambdaFunction, `${props.awsS3PrimaryDataPrefix}*`);
-
-    // Add in Nag suppressions for the S3 bucket access with * access
-    NagSuppressions.addResourceSuppressions(
-      lambdaFunction,
-      [
-        {
-          id: 'AwsSolutions-IAM5',
-          reason: 'We need to access all objects in the cache bucket with the prefix',
-        },
-      ],
-      true
     );
   }
 

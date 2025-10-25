@@ -46,9 +46,10 @@ def handler(event, context):
             workflow_version=workflow_version
         )))
     except StopIteration:
-        raise ValueError(
-            f"Workflow with name '{workflow_name}' and version '{workflow_version}' not found."
-        )
+        workflow = {
+            "name": workflow_name,
+            "version": workflow_version
+        }
 
     # Generate the workflow run name
     workflow_run_name = create_workflow_run_name_from_workflow_name_workflow_version_and_portal_run_id(

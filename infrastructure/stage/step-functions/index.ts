@@ -47,7 +47,7 @@ function createStateMachineDefinitionSubstitutions(props: BuildSfnProps): {
     definitionSubstitutions['__event_bus_name__'] = props.eventBus.eventBusName;
 
     /* Substitute the event detail type in the state machine definition */
-    definitionSubstitutions['__workflow_run_state_change_detail_type__'] =
+    definitionSubstitutions['__workflow_run_state_change_event_detail_type__'] =
       WORKFLOW_RUN_STATE_CHANGE_DETAIL_TYPE;
     definitionSubstitutions['__workflow_run_update_detail_type__'] =
       WORKFLOW_RUN_UPDATE_DETAIL_TYPE;

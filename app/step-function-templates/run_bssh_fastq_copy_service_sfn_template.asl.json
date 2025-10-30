@@ -35,21 +35,10 @@
           "JitterStrategy": "FULL"
         }
       ],
-      "Next": "Is New workflow manager deployed",
+      "Next": "Put RUNNING Event",
       "Assign": {
         "workflowRunObject": "{% $states.result.Payload.workflowRunObject %}"
       }
-    },
-    "Is New workflow manager deployed": {
-      "Type": "Choice",
-      "Choices": [
-        {
-          "Next": "Put RUNNING Event",
-          "Condition": "{% ${__new_workflow_manager_is_deployed__} %}",
-          "Comment": "New workflow manager is deployed"
-        }
-      ],
-      "Default": "Put RUNNING Event (legacy)"
     },
     "Put RUNNING Event": {
       "Type": "Task",
@@ -61,21 +50,6 @@
             "DetailType": "${__workflow_run_update_detail_type__}",
             "Source": "${__stack_source__}",
             "Detail": "{% /* Merge workflow event with new values */\n[\n  $workflowRunObject,\n  {\n    \"timestamp\": $states.context.State.EnteredTime,\n    \"status\": \"RUNNING\"\n  }\n] ~> \n$merge\n %}"
-          }
-        ]
-      },
-      "Next": "Get Manifest"
-    },
-    "Put RUNNING Event (legacy)": {
-      "Type": "Task",
-      "Resource": "arn:aws:states:::events:putEvents",
-      "Arguments": {
-        "Entries": [
-          {
-            "EventBusName": "${__event_bus_name__}",
-            "DetailType": "${__workflow_run_state_change_event_detail_type__}",
-            "Source": "${__stack_source__}",
-            "Detail": "{% /* Merge workflow event with new values */\n[\n  $workflowRunObject,\n  {\n    \"timestamp\": $states.context.State.EnteredTime,\n    \"status\": \"RUNNING\"\n  }\n] ~> \n$merge ~>\n/* Convert libraries */\n| $ | {\"linkedLibraries\": libraries}, [\"libraries\"] | ~>\n/* Convert Workflow */\n| $ | {\"workflowName\": workflow.name, \"workflowVersion\": workflow.version}, [\"workflow\"] |\n %}"
           }
         ]
       },
@@ -238,7 +212,7 @@
       "Type": "Choice",
       "Choices": [
         {
-          "Next": "Is New Workflow Manager Deployed",
+          "Next": "Put SUCCEEDED Event",
           "Condition": "{% $isSynced %}",
           "Comment": "Is Synced"
         },
@@ -249,17 +223,6 @@
         }
       ],
       "Default": "Wait 5 Seconds"
-    },
-    "Is New Workflow Manager Deployed": {
-      "Type": "Choice",
-      "Choices": [
-        {
-          "Next": "Put SUCCEEDED Event",
-          "Condition": "{% ${__new_workflow_manager_is_deployed__} %}",
-          "Comment": "New Workflow Manager is deployed"
-        }
-      ],
-      "Default": "Put SUCCEEDED Event (legacy)"
     },
     "Put SUCCEEDED Event": {
       "Type": "Task",
@@ -283,21 +246,6 @@
       "Assign": {
         "iterableCount": "{% $iterableCount + 1 %}"
       }
-    },
-    "Put SUCCEEDED Event (legacy)": {
-      "Type": "Task",
-      "Resource": "arn:aws:states:::events:putEvents",
-      "Arguments": {
-        "Entries": [
-          {
-            "EventBusName": "${__event_bus_name__}",
-            "DetailType": "${__workflow_run_state_change_event_detail_type__}",
-            "Source": "${__stack_source__}",
-            "Detail": "{% /* Merge workflow event with new values */\n[\n  $workflowRunObject,\n  {\n    \"timestamp\": $states.context.State.EnteredTime,\n    \"status\": \"SUCCEEDED\"\n  }\n] ~> \n$merge ~>\n/* Convert libraries */\n| $ | {\"linkedLibraries\": libraries}, [\"libraries\"] | ~>\n/* Convert Workflow */\n| $ | {\"workflowName\": workflow.name, \"workflowVersion\": workflow.version}, [\"workflow\"] |\n %}"
-          }
-        ]
-      },
-      "End": true
     },
     "Fail": {
       "Type": "Fail"

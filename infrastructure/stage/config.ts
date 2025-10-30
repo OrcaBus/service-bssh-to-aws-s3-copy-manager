@@ -2,7 +2,6 @@ import { StageName } from '@orcabus/platform-cdk-constructs/shared-config/accoun
 
 import {
   EVENT_BUS_NAME,
-  NEW_WORKFLOW_MANAGER_IS_DEPLOYED,
   PAYLOAD_VERSION,
   SSM_PARAMETER_PATH_DEFAULT_WORKFLOW_VERSION,
   SSM_PARAMETER_PATH_OUTPUT_PREFIX,
@@ -63,9 +62,6 @@ export const getStatelessStackProps = (stage: StageName): StatelessApplicationSt
 
     /* Event stuff */
     eventBusName: EVENT_BUS_NAME,
-
-    /* Is new workflow manager deployed */
-    isNewWorkflowManagerDeployed: NEW_WORKFLOW_MANAGER_IS_DEPLOYED[stage],
 
     /* SSM Parameter paths */
     ssmParameterPaths: getSsmParameterPaths(),

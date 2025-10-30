@@ -39,7 +39,6 @@ export class StatelessApplicationStack extends cdk.Stack {
     const stepFunctionObjects = buildAllStepFunctions(this, {
       lambdas: lambdas,
       eventBus: eventBus,
-      isNewWorkflowManagerDeployed: props.isNewWorkflowManagerDeployed,
     });
 
     // Build Event Rules

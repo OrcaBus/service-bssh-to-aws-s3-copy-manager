@@ -56,9 +56,6 @@ function createStateMachineDefinitionSubstitutions(props: BuildSfnProps): {
 
     /* Substitute the event source in the state machine definition */
     definitionSubstitutions['__stack_source__'] = STACK_SOURCE;
-    /* Is the new workflow manager enabled */
-    definitionSubstitutions['__new_workflow_manager_is_deployed__'] =
-      props.isNewWorkflowManagerDeployed.toString();
   }
 
   /* Substitute the bssh payload version in the state machine definition */

@@ -60,9 +60,6 @@ export interface BuildSfnsProps {
 
   /* Event Stuff */
   eventBus: IEventBus;
-
-  /* New workflow manager deployed */
-  isNewWorkflowManagerDeployed: boolean;
 }
 
 export interface BuildSfnProps extends BuildSfnsProps {

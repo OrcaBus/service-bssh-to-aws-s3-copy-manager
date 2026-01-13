@@ -2,24 +2,18 @@ import { EventPattern, IEventBus, Rule } from 'aws-cdk-lib/aws-events';
 
 export type EventBridgeNameList =
   // Glue succeeded
-  | 'upstreamSucceededEventLegacy'
   | 'upstreamSucceededEvent'
   // Draft Events
-  | 'wrscDraftLegacy'
   | 'wrscDraft'
   // Pre-ready
-  | 'wrscReadyLegacy'
   | 'wrscReady';
 
 export const eventBridgeNameList: EventBridgeNameList[] = [
   // Glue succeeded
-  'upstreamSucceededEventLegacy',
   'upstreamSucceededEvent',
   // Draft Events
-  'wrscDraftLegacy',
   'wrscDraft',
   // Pre-ready
-  'wrscReadyLegacy',
   'wrscReady',
 ];
 

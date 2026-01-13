@@ -1,7 +1,6 @@
 /* Constants for the stack */
 
 import path from 'path';
-import { StageName } from '@orcabus/platform-cdk-constructs/shared-config/accounts';
 import { DATA_SCHEMA_REGISTRY_NAME } from '@orcabus/platform-cdk-constructs/shared-config/event-bridge';
 
 /* Directory constants */
@@ -58,13 +57,6 @@ export const SUCCEEDED_STATUS = 'SUCCEEDED';
 /* Schema constants */
 export const SCHEMA_REGISTRY_NAME = DATA_SCHEMA_REGISTRY_NAME;
 export const SSM_SCHEMA_ROOT = path.join(SSM_PARAMETER_PATH_PREFIX, 'schemas');
-
-/* Future proofing */
-export const NEW_WORKFLOW_MANAGER_IS_DEPLOYED: Record<StageName, boolean> = {
-  BETA: true,
-  GAMMA: true,
-  PROD: true,
-};
 
 /* Engine parameters */
 export const WORKFLOW_OUTPUT_PREFIX = `s3://{__CACHE_BUCKET__}/{__CACHE_PREFIX__}primary/`;

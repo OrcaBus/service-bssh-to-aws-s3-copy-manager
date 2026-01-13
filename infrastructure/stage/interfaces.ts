@@ -28,9 +28,6 @@ export interface StatelessApplicationStackConfig extends cdk.StackProps {
   /* Event stuff */
   eventBusName: string;
 
-  /* Is new workflow manager deployed */
-  isNewWorkflowManagerDeployed: boolean;
-
   /* SSM Parameter paths */
   ssmParameterPaths: SsmParameterPaths;
 }

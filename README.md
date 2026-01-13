@@ -1,15 +1,35 @@
 # BSSH to AWS S3 Copy Manager
 
-## Overview
+## Table of Contents <!-- omit in toc -->
+
+- [Overview](#overview)
+- [Event Bus / Events Targets Overview](#event-bus--events-targets-overview)
+  - [Ready Event Creation](#ready-event-creation)
+  - [Workflow](#workflow)
+  - [Consumed Events](#consumed-events)
+  - [Published Events](#published-events)
+- [BaseSpace Directory Overview](#basespace-directory-overview)
+- [AWS S3 Directory Overview](#aws-s3-directory-overview)
+- [Project Structure](#project-structure)
+- [Setup](#setup)
+  - [Requirements](#requirements)
+  - [Install Dependencies](#install-dependencies)
+  - [CDK Commands](#cdk-commands)
+- [CDK Stacks](#cdk-stacks)
+  - [Stateful stack](#stateful-stack)
+  - [Stateless Stack](#stateless-stack)
+- [Linting and Formatting](#linting-and-formatting)
+  - [Run Checks](#run-checks)
+  - [Fix Issues](#fix-issues)
+
+
+## Description
 
 Application to copy primary data from BSSH ([BaseSpace Sequencing Hub](https://www.illumina.com/products/by-type/informatics-products/basespace-sequence-hub.html)) to AWS S3
 
 We perform a direct copy of the instrument run id, along with the InterOp files from the BCL directory.
 
-This project is a stateless-only application meaning there are no stateful resources (e.g., DynamoDB, RDS) in the application.
-
-
-## Event Bus / Events Targets Overview
+### Ready Event Creation
 
 The application listens to the Workflow Run State Change event from the Workflow Manager
 where the with the workflowName is set to 'BclConvert' and the status is set to 'SUCCEEDED'.
@@ -32,34 +52,61 @@ We then validate the DRAFT event for the 'bssh-to-aws-s3-copy' workflow by confi
 * engineParameters:
   * outputUri - the S3 URI to copy the data over to
 
-The READY event is then sent to the Workflow Manager and then listened to by this Application.
+![BSSH-TO-AWS-S3 Pipeline Manager Architecture](./docs/drawio-exports/draft-to-ready.drawio.svg)
+
+### Workflow
+
+The READY event is then sent to the Workflow Manager and then listened to by this application.
 
 The application then performs the following tasks through AWS Step Functions:
 
 1. Push a 'RUNNING' event to inform the Workflow Manager that the copy is in progress.
 2. Generate two ICAv2DataCopySync events.
    * Copy the InterOp files from the raw BCL Directory under the directory 'InterOp' under the output directory.
-   * Copy the Samples and Reports from the BCLConvert directory and place them under the output directory with the name 'Samples' and 'Reports' respectively.
+   * Copy the Samples and Reports from the BCLConvert directory and
+     place them under the output directory with the name 'Samples' and 'Reports' respectively.
 3. Push a 'SUCCEEDED' event to inform the Workflow Manager that the copy is complete.
 
-![Event Bus Overview](./docs/drawio-exports/bssh-to-aws-s3-copy.drawio.svg)
+![BSSH-TO-AWS-S3 Pipeline Manager Architecture](./docs/drawio-exports/workflow-export.drawio.svg)
 
 
-## Step Functions Diagrams
+### Consumed Events
 
-### BCLConvert Succeeded To Draft
+| Name / DetailType             | Source                    | Schema Link                                                                                                                                | Description                           |
+|-------------------------------|---------------------------|--------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------|
+| `WorkflowRunStateChange`      | `orcabus.workflowmanager` | [WorkflowRunStateChange](https://github.com/OrcaBus/wiki/tree/main/orcabus-platform#workflowrunstatechange)                                | Source of updates on WorkflowRuns     |
+| `Icav2WesAnalysisStateChange` | `orcabus.icav2wes`        | [Icav2WesAnalysisStateChange](https://github.com/OrcaBus/service-icav2-wes-manager/blob/main/app/event-schemas/analysis-state-change.json) | ICAv2 WES Analysis State Change event |
 
-![BCLConvert Succeeded Event to Draft](./docs/workflow-studio-exports/handle-bclconvert-succeeded.svg)
 
-### Draft Validation
+### Published Events
 
-![Draft Validation](./docs/workflow-studio-exports/validate-draft-to-ready.svg)
+| Name / DetailType   | Source                  | Schema Link                                                                                                                                    | Description                    |
+|---------------------|-------------------------|------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------|
+| `WorkflowRunUpdate` | `orcabus.bsshtoawss3` | [WorkflowRunUpdate](https://github.com/OrcaBus/service-workflow-manager/blob/main/docs/events/WorkflowRunUpdate/WorkflowRunUpdate.schema.json) | Announces Workflow Run Updates |
 
-### BSSH To AWS S3 Copy Step Function
 
-![BSSH Fastq Copy Step Function](./docs/workflow-studio-exports/run-bssh-fastq-copy-service.svg)
+### Release management
 
-## BaseSpace Directory Overview
+The service employs a fully automated CI/CD pipeline that
+automatically builds and releases all changes to the `main` code branch.
+
+### Related Services
+
+#### Upstream Pipelines
+
+- [BCLConvert Manager](https://github.com/OrcaBus/service-bclconvert-manager)
+
+#### Downstream Pipelines
+
+- [Fastq Glue](https://github.com/OrcaBus/service-fastq-glue)
+
+#### Primary Services
+
+- [Workflow Manager](https://github.com/OrcaBus/service-workflow-manager)
+- [ICAv2 Data Copy Manager](https://github.com/OrcaBus/service-icav2-data-copy-manager/)
+
+
+### BaseSpace Directory Overview
 
 Raw data is stored in BSSH under the following directory structure:
 
@@ -81,7 +128,7 @@ Where:
 
 If you think this is excessive, ugly and unsortable, then you are not alone.
 
-## AWS S3 Directory Overview
+### AWS S3 Directory Overview
 
 Data is copied into our cache bucket directory (pipeline-prod-cache-503977275616-ap-southeast-2)
 under the following directory structure:
@@ -97,8 +144,78 @@ Where PROJECT_NAME is one of the following:
 
 And the PORTAL_RUN_ID is the PORTAL_RUN_ID for the BSSH to AWS S3 Copy Run (not the BCLConvert Run).
 
+## Infrastructure & Deployment
 
-## Project Structure
+> Deployment settings / configuration (e.g. CodePipeline(s) / automated builds).
+
+Infrastructure and deployment are managed via CDK.
+This template provides two types of CDK entry points: `cdk-stateless` and `cdk-stateful`.
+
+### Stateful
+
+- SSM Parameters
+- Event Schemas
+
+### Stateless
+
+- Lambdas
+- Step Functions
+- Event Rules
+- Event Targets (connecting event rules to StepFunctions)
+
+### CDK Commands
+
+You can access CDK commands using the `pnpm` wrapper script.
+
+- **`cdk-stateless`**: Used to deploy stacks containing stateless resources (e.g., AWS Lambda), which can be easily
+  redeployed without side effects.
+- **`cdk-stateful`**: Used to deploy stacks containing stateful resources (e.g., AWS DynamoDB, AWS RDS), where
+  redeployment may not be ideal due to potential side effects.
+
+The type of stack to deploy is determined by the context set in the `./bin/deploy.ts` file. This ensures the correct
+stack is executed based on the provided context.
+
+For example:
+
+```sh
+# Deploy a stateless stack
+pnpm cdk-stateless <command>
+
+# Deploy a stateful stack
+pnpm cdk-stateful <command>
+```
+
+### Stacks
+
+This CDK project manages multiple stacks. The root stack (the only one that does not include `DeploymentPipeline` in its
+stack ID) is deployed in the toolchain account and sets up a CodePipeline for cross-environment deployments to `beta`,
+`gamma`, and `prod`.
+
+To list all available stacks, run:
+
+```sh
+pnpm cdk-stateful ls
+pnpm cdk-stateless ls
+```
+
+Output
+
+```sh
+# Stateful
+BSSHStatefulPipeline
+BSSHStatefulPipeline/BSSHStatefulPipeline/OrcaBusBeta/BSSHToAWSS3CopyStatefulDeployStack (OrcaBusBeta-BSSHToAWSS3CopyStatefulDeployStack)
+BSSHStatefulPipeline/BSSHStatefulPipeline/OrcaBusGamma/BSSHToAWSS3CopyStatefulDeployStack (OrcaBusGamma-BSSHToAWSS3CopyStatefulDeployStack)
+BSSHStatefulPipeline/BSSHStatefulPipeline/OrcaBusProd/BSSHToAWSS3CopyStatefulDeployStack (OrcaBusProd-BSSHToAWSS3CopyStatefulDeployStack)
+# Stateless
+BSSHStatelessPipeline
+BSSHStatelessPipeline/BSSHStatelessPipeline/OrcaBusBeta/BSSHToAWSS3CopyStatelessDeployStack (OrcaBusBeta-BSSHToAWSS3CopyStatelessDeployStack)
+BSSHStatelessPipeline/BSSHStatelessPipeline/OrcaBusGamma/BSSHToAWSS3CopyStatelessDeployStack (OrcaBusGamma-BSSHToAWSS3CopyStatelessDeployStack)
+BSSHStatelessPipeline/BSSHStatelessPipeline/OrcaBusProd/BSSHToAWSS3CopyStatelessDeployStack (OrcaBusProd-BSSHToAWSS3CopyStatelessDeployStack)
+```
+
+## Development
+
+### Project Structure
 
 The project is organized into the following key directories:
 
@@ -118,9 +235,9 @@ The project is organized into the following key directories:
 
 - **`./test`**: Contains tests for CDK code compliance against `cdk-nag`. You should modify these test files to match the resources defined in the `./infrastructure` folder.
 
-## Setup
+### Setup
 
-### Requirements
+#### Requirements
 
 ```sh
 node --version
@@ -131,10 +248,9 @@ npm install --global corepack@latest
 
 # Enable Corepack to use pnpm
 corepack enable pnpm
-
 ```
 
-### Install Dependencies
+#### Install Dependencies
 
 To install all required dependencies, run:
 
@@ -142,62 +258,17 @@ To install all required dependencies, run:
 make install
 ```
 
-### CDK Commands
+### Conventions
 
-You can access CDK commands using the `pnpm` wrapper script.
-
-This template provides the CDK entry point: `cdk-stateless`.
-
-- **`cdk-stateless`**: Used to deploy stacks containing stateless resources (e.g., AWS Lambda), which can be easily redeployed without side effects.
-
-The type of stack to deploy is determined by the context set in the `./bin/deploy.ts` file. This ensures the correct stack is executed based on the provided context.
-
-For example:
-
-```sh
-# Deploy a stateless stack
-pnpm cdk-stateless <command>
-```
-
-## CDK Stacks
-
-This CDK project manages multiple stacks. The root stack (the only one that does not include `DeploymentPipeline` in its stack ID) is deployed in the toolchain account and sets up a CodePipeline for cross-environment deployments to `beta`, `gamma`, and `prod`.
-
-### Stateful stack
-
-To list all available stateful stacks, run:
-
-```shell
-pnpm cdk-stateful list
-```
-
-```sh
-OrcaBusStatefulServiceStack
-OrcaBusStatefulServiceStack/BSSHToAWSS3CopyManagerStatefulDeploymentPipeline/OrcaBusBeta/BSSHToAWSS3CopyManagerStatefulDeployStack (OrcaBusBeta-BSSHToAWSS3CopyManagerStatefulDeployStack)
-OrcaBusStatefulServiceStack/BSSHToAWSS3CopyManagerStatefulDeploymentPipeline/OrcaBusGamma/BSSHToAWSS3CopyManagerStatefulDeployStack (OrcaBusGamma-BSSHToAWSS3CopyManagerStatefulDeployStack)
-OrcaBusStatefulServiceStack/BSSHToAWSS3CopyManagerStatefulDeploymentPipeline/OrcaBusProd/BSSHToAWSS3CopyManagerStatefulDeployStack (OrcaBusProd-BSSHToAWSS3CopyManagerStatelessDeployStack)
-```
-
-### Stateless Stack
-
-To list all available stateless stacks, run:
-
-```shell
-pnpm cdk-stateless list
-```
-
-Example output:
-
-```sh
-OrcaBusStatelessServiceStack
-OrcaBusStatelessServiceStack/BSSHToAWSS3CopyManagerStatelessDeploymentPipeline/OrcaBusBeta/BSSHToAWSS3CopyManagerStatelessDeployStack (OrcaBusBeta-BSSHToAWSS3CopyManagerStatelessDeployStack)
-OrcaBusStatelessServiceStack/BSSHToAWSS3CopyManagerStatelessDeploymentPipeline/OrcaBusGamma/BSSHToAWSS3CopyManagerStatelessDeployStack (OrcaBusGamma-BSSHToAWSS3CopyManagerStatelessDeployStack)
-OrcaBusStatelessServiceStack/BSSHToAWSS3CopyManagerStatelessDeploymentPipeline/OrcaBusProd/BSSHToAWSS3CopyManagerStatelessDeployStack (OrcaBusProd-BSSHToAWSS3CopyManagerStatelessDeployStack)
-```
-
-## Linting and Formatting
+### Linting and Formatting
 
 ### Run Checks
+
+Automated checks are enforced via pre-commit hooks, ensuring only checked code is committed. For details consult the
+`.pre-commit-config.yaml` file.
+
+Manual, on-demand checking is also available via `make` targets (see below). For details consult the `Makefile` in the
+root of the project.
 
 To run linting and formatting checks on the root project, use:
 

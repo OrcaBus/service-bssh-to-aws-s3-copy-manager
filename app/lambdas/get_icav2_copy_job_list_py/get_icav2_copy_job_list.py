@@ -43,7 +43,8 @@ from wrapica.utils.globals import FILE_DATA_TYPE, FOLDER_DATA_TYPE, ICAV2_URI_SC
 # Local imports
 from bssh_manager_tools.utils.icav2_analysis_helpers import (
     get_run_folder_obj_from_analysis_id,
-    get_interop_files_from_run_folder, get_bclconvert_outputs_from_analysis_id,
+    get_interop_files_from_run_folder,
+    get_bclconvert_outputs_from_analysis_id,
 )
 from bssh_manager_tools.utils.logger import set_basic_logger
 

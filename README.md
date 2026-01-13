@@ -25,9 +25,9 @@
     - [Requirements](#requirements)
     - [Install Dependencies](#install-dependencies)
   - [Conventions](#conventions)
-  - [Linting and Formatting](#linting-and-formatting)
-  - [Run Checks](#run-checks)
-  - [Fix Issues](#fix-issues)
+    - [Linting and Formatting](#linting-and-formatting)
+  - [Testing](#testing)
+- [Glossary \& References](#glossary--references)
 
 
 ## Description
@@ -267,9 +267,7 @@ make install
 
 ### Conventions
 
-### Linting and Formatting
-
-### Run Checks
+#### Linting and Formatting
 
 Automated checks are enforced via pre-commit hooks, ensuring only checked code is committed. For details consult the
 `.pre-commit-config.yaml` file.
@@ -283,10 +281,15 @@ To run linting and formatting checks on the root project, use:
 make check
 ```
 
-### Fix Issues
+### Testing
 
-To automatically fix issues with ESLint and Prettier, run:
+Unit tests are available for most of the business logic. Test code is hosted alongside business in `/tests/` directories.
 
 ```sh
-make fix
+make test
 ```
+
+## Glossary & References
+
+For general terms and expressions used across OrcaBus services, please see the
+platform [documentation](https://github.com/OrcaBus/wiki/blob/main/orcabus-platform/README.md#glossary--references).

@@ -39,7 +39,7 @@ We perform a direct copy of the instrument run id, along with the InterOp files 
 ### Ready Event Creation
 
 The application listens to the Workflow Run State Change event from the Workflow Manager
-where the with the workflowName is set to 'BclConvert' and the status is set to 'SUCCEEDED'.
+where the workflow name is set to 'BclConvert' and the status is set to 'SUCCEEDED'.
 
 From the SUCCEEDED event, the application creates a 'DRAFT' BSSH-to-AWS-S3 event (for itself),
 by taking the ICAv2 Analysis ID to determine the workflow inputs + outputs.

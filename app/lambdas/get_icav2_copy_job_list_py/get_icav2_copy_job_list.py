@@ -156,13 +156,13 @@ def handler(event, context):
                     # Samples
                     convert_project_id_and_data_path_to_uri(
                         project_id=bcl_convert_output_obj.project_id,
-                        data_path=bcl_convert_output_obj.data.details.path + "Samples",
+                        data_path=Path(bcl_convert_output_obj.data.details.path) / "Samples",
                         data_type=FOLDER_DATA_TYPE,
                     ),
                     # Reports
                     convert_project_id_and_data_path_to_uri(
                         project_id=bcl_convert_output_obj.project_id,
-                        data_path=bcl_convert_output_obj.data.details.path + "Reports",
+                        data_path=Path(bcl_convert_output_obj.data.details.path) / "Reports",
                         data_type=FOLDER_DATA_TYPE,
                     )
                 ],
@@ -178,7 +178,7 @@ def handler(event, context):
                 "sourceUriList": interops_as_uri + ([index_metrics_uri] if index_metrics_uri else []),
                 "destinationUri": convert_project_id_and_data_path_to_uri(
                     project_id=dest_project_data_obj.project_id,
-                    data_path=dest_project_data_obj.data.details.path + "InterOp",
+                    data_path=Path(dest_project_data_obj.data.details.path) + "InterOp",
                     data_type=FOLDER_DATA_TYPE,
                     uri_type=ICAV2_URI_SCHEME
                 )

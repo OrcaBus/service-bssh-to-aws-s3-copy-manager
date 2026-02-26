@@ -30,7 +30,7 @@ export function buildBsshToolsLayer(scope: Construct): PythonLayerVersion {
     */
   return new PythonLayerVersion(scope, 'bssh-lambda-layer', {
     entry: path.join(LAYERS_DIR, 'bssh_manager_tools_layer'),
-    compatibleRuntimes: [lambda.Runtime.PYTHON_3_12],
+    compatibleRuntimes: [lambda.Runtime.PYTHON_3_14],
     compatibleArchitectures: [lambda.Architecture.ARM_64],
     bundling: {
       image: getPythonUvDockerImage(),
@@ -57,7 +57,7 @@ function buildLambdaFunction(scope: Construct, props: BuildLambdaProps): LambdaO
   /* Build the lambda function */
   const lambdaFunction = new PythonUvFunction(scope, props.lambdaName, {
     entry: path.join(LAMBDA_DIR, lambdaNameToSnakeCase + '_py'),
-    runtime: lambda.Runtime.PYTHON_3_12,
+    runtime: lambda.Runtime.PYTHON_3_14,
     architecture: lambda.Architecture.ARM_64,
     index: lambdaNameToSnakeCase + '.py',
     handler: 'handler',
@@ -162,19 +162,6 @@ function buildLambdaFunction(scope: Construct, props: BuildLambdaProps): LambdaO
       props.ssmParameterPaths.outputPrefix
     );
   }
-
-  // AwsSolutions-L1 - We'll migrate to PYTHON_3_13 ASAP, soz
-  // AwsSolutions-IAM4 - We need to add this for the lambda to work
-  NagSuppressions.addResourceSuppressions(
-    lambdaFunction,
-    [
-      {
-        id: 'AwsSolutions-L1',
-        reason: 'Will migrate to PYTHON_3_13 ASAP, soz',
-      },
-    ],
-    true
-  );
 
   /* Return the lambda object */
   return {

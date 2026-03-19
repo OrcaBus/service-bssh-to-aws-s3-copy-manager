@@ -96,7 +96,6 @@
           "Launch Copy Job": {
             "Type": "Task",
             "Resource": "arn:aws:states:::events:putEvents.waitForTaskToken",
-            "End": true,
             "Arguments": {
               "Entries": [
                 {
@@ -121,7 +120,53 @@
                 "MaxAttempts": 3
               }
             ],
-            "HeartbeatSeconds": 3600
+            "HeartbeatSeconds": 3600,
+            "Next": "Validate Copy Job",
+            "Output": "{% $states.input %}"
+          },
+          "Validate Copy Job": {
+            "Type": "Map",
+            "ItemProcessor": {
+              "ProcessorConfig": {
+                "Mode": "INLINE"
+              },
+              "StartAt": "Validate Source Copy",
+              "States": {
+                "Validate Source Copy": {
+                  "Type": "Task",
+                  "Resource": "arn:aws:states:::lambda:invoke",
+                  "Arguments": {
+                    "FunctionName": "${__validate_copy_job_lambda_function_arn__}",
+                    "Payload": {
+                      "sourceUri": "{% $states.input.sourceUriIter %}",
+                      "destinationUri": "{% $states.input.destinationUri %}"
+                    }
+                  },
+                  "Retry": [
+                    {
+                      "ErrorEquals": [
+                        "Lambda.ServiceException",
+                        "Lambda.AWSLambdaException",
+                        "Lambda.SdkClientException",
+                        "Lambda.TooManyRequestsException"
+                      ],
+                      "IntervalSeconds": 1,
+                      "MaxAttempts": 3,
+                      "BackoffRate": 2,
+                      "JitterStrategy": "FULL"
+                    }
+                  ],
+                  "End": true,
+                  "Output": {}
+                }
+              }
+            },
+            "End": true,
+            "Items": "{% $states.input.sourceUriList %}",
+            "ItemSelector": {
+              "sourceUriIter": "{% $states.context.Map.Item.Value %}",
+              "destinationUri": "{% $states.input.destinationUri %}"
+            }
           }
         }
       },

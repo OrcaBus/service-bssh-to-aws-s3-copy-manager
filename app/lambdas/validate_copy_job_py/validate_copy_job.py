@@ -73,9 +73,9 @@ def handler(event, context):
                 project_data_iter_.data.details.name == ".iap_upload_test.tmp"
             ),
             find_project_data_bulk(
-            project_id=destination_data_obj.project_id,
-            parent_folder_id=destination_data_obj.data.id,
-            data_type="FILE"
+                project_id=destination_data_obj.project_id,
+                parent_folder_id=destination_data_obj.data.id,
+                data_type="FILE"
             )
         ))
 
@@ -84,6 +84,48 @@ def handler(event, context):
                 f"The number of files in the source and destination directories do not match. "
                 f"Source: {len(all_source_objects)}, Destination: {len(all_destination_object)}"
             )
+
+        all_source_objects_sorted = sorted(
+            all_source_objects,
+            key=lambda x: x.data.details.path
+        )
+        all_destination_objects_sorted = sorted(
+            all_destination_object,
+            key=lambda x: x.data.details.path
+        )
+
+        for source_object_iter, dest_object_iter_ in zip(
+            all_source_objects_sorted,
+            all_destination_objects_sorted
+        ):
+            # Check we're checking the same file
+            if not (
+                    (
+                            Path(source_object_iter.data.details.path).relative_to(
+                                source_data_obj.data.details.path
+                            )
+                    ) ==
+                    (
+                            Path(dest_object_iter_.data.details.path).relative_to(
+                                destination_data_obj.data.details.path
+                            )
+                    )
+            ):
+                raise ValueError(
+                    f"Paths out of sync, "
+                    f"{source_object_iter.data.details.path} does not equal "
+                    f"{dest_object_iter_.data.details.path}"
+                )
+
+            # Check file size in bytes are same
+            if not (
+                    source_object_iter.data.details.file_size_in_bytes == dest_object_iter_.data.details.file_size_in_bytes
+            ):
+                raise ValueError(
+                    f"File sizes do not match between the source and destination. "
+                    f"{source_object_iter.data.details.file_size_in_bytes} != "
+                    f"{dest_object_iter_.data.details.file_size_in_bytes}"
+                )
 
     # Check that the file size in bytes matches between the source and destination
     else:

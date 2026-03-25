@@ -21,6 +21,7 @@ import {
 } from '../constants';
 import { camelCaseToSnakeCase } from '../utils';
 import { Construct } from 'constructs';
+import { NagSuppressions } from 'cdk-nag';
 
 function createStateMachineDefinitionSubstitutions(props: BuildSfnProps): {
   [key: string]: string;
@@ -36,7 +37,7 @@ function createStateMachineDefinitionSubstitutions(props: BuildSfnProps): {
   for (const lambdaObject of lambdaFunctions) {
     const sfnSubtitutionKey = `__${camelCaseToSnakeCase(lambdaObject.lambdaName)}_lambda_function_arn__`;
     definitionSubstitutions[sfnSubtitutionKey] =
-      lambdaObject.lambdaFunction.currentVersion.functionArn;
+      lambdaObject.lambdaFunction.latestVersion.functionArn;
   }
 
   /* General substitutions */
@@ -74,7 +75,17 @@ function wireUpStateMachinePermissions(props: WirePermissionsProps): void {
     lambdaFunctionNamesInSfn.includes(lambdaObject.lambdaName)
   );
   for (const lambdaObject of lambdaFunctions) {
-    lambdaObject.lambdaFunction.currentVersion.grantInvoke(props.stateMachineObj);
+    lambdaObject.lambdaFunction.grantInvoke(props.stateMachineObj);
+    NagSuppressions.addResourceSuppressions(
+      props.stateMachineObj,
+      [
+        {
+          id: 'AwsSolutions-IAM5',
+          reason: 'Lambda uses an asterisk when not set to current version used',
+        },
+      ],
+      true
+    );
   }
 
   /* Wire up event bus permissions */

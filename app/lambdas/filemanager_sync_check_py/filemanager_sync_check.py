@@ -48,6 +48,14 @@ def handler(event, context):
         )
     ))
 
+    # Num unique files
+    filemanager_files_count = len(list(set(
+        list(map(
+            lambda fm_iter_: fm_iter_['ingestId'],
+            filemanager_files
+        ))
+    )))
+
     # List files via icav2
     icav2_project_data_obj = convert_uri_to_project_data_obj(s3_prefix)
     icav2_project_data_list = find_project_data_bulk(
@@ -56,10 +64,9 @@ def handler(event, context):
         data_type='FILE'
     )
 
-    # We try again in a few minutes
-    if len(filemanager_files) != len(icav2_project_data_list):
+    if not filemanager_files_count == len(icav2_project_data_list):
         logger.info(
-            f"Filemanager has {len(filemanager_files)} files, "
+            f"Filemanager has {filemanager_files_count} files, "
             f"ICAv2 has {len(icav2_project_data_list)} files"
         )
         return {
@@ -71,48 +78,3 @@ def handler(event, context):
         return {
             "isSynced": True,
         }
-
-
-
-# if __name__ == "__main__":
-#     from os import environ
-#     import json
-#
-#     environ['AWS_PROFILE'] = 'umccr-production'
-#     environ['HOSTNAME_SSM_PARAMETER_NAME'] = '/hosted_zone/umccr/name'
-#     environ['ORCABUS_TOKEN_SECRET_ID'] = 'orcabus/token-service-jwt'
-#     print(json.dumps(
-#         handler(
-#             {
-#                 "s3Prefix": "s3://pipeline-prod-cache-503977275616-ap-southeast-2/byob-icav2/production/primary/250606_A01052_0266_BHFHHJDSXF/20250607eb351de0/"
-#             },
-#             None
-#         ),
-#         indent=4
-#     ))
-#
-#     # {
-#     #     "isSynced": true
-#     # }
-
-
-# if __name__ == "__main__":
-#     from os import environ
-#     import json
-#
-#     environ['AWS_PROFILE'] = 'umccr-production'
-#     environ['HOSTNAME_SSM_PARAMETER_NAME'] = '/hosted_zone/umccr/name'
-#     environ['ORCABUS_TOKEN_SECRET_ID'] = 'orcabus/token-service-jwt'
-#     print(json.dumps(
-#         handler(
-#             {
-#                 "s3Prefix": "s3://pipeline-prod-cache-503977275616-ap-southeast-2/byob-icav2/production/primary/250613_A00130_0370_AHFK32DSXF/202506153a0ee250/"
-#             },
-#             None
-#         ),
-#         indent=4
-#     ))
-#
-#     # {
-#     #     "isSynced": true
-#     # }

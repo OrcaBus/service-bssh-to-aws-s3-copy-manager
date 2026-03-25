@@ -9,7 +9,6 @@ Check if the filemanager has the same number of files as the aws s3 api command 
 # Standard imports
 import logging
 from urllib.parse import urlparse
-from pathlib import Path
 
 # Wrapica imports
 from wrapica.project_data import find_project_data_bulk, convert_uri_to_project_data_obj
@@ -50,7 +49,7 @@ def handler(event, context):
     ))
 
     # Num unique files
-    filemanager_files_list = len(list(set(
+    filemanager_files_count = len(list(set(
         list(map(
             lambda fm_iter_: fm_iter_['ingestId'],
             filemanager_files
@@ -65,9 +64,9 @@ def handler(event, context):
         data_type='FILE'
     )
 
-    if not filemanager_files_list == len(icav2_project_data_list):
+    if not filemanager_files_count == len(icav2_project_data_list):
         logger.info(
-            f"Filemanager has {len(filemanager_files)} files, "
+            f"Filemanager has {filemanager_files_count} files, "
             f"ICAv2 has {len(icav2_project_data_list)} files"
         )
         return {

@@ -13,7 +13,8 @@ export type LambdaName =
   // POST COPY
   | 'runFilemanagerSync'
   | 'addPortalRunIdAttributes'
-  | 'filemanagerSyncCheck';
+  | 'filemanagerSyncCheck'
+  | 'validateCopyJob';
 
 export const lambdaNameList: Array<LambdaName> = [
   // DRAFT
@@ -27,6 +28,7 @@ export const lambdaNameList: Array<LambdaName> = [
   'runFilemanagerSync',
   'addPortalRunIdAttributes',
   'filemanagerSyncCheck',
+  'validateCopyJob',
 ];
 
 export interface LambdaRequirementProps {
@@ -106,5 +108,9 @@ export const lambdaToRequirementsMap: LambdaToRequirementsMapType = {
     needsOrcabusApiToolsLayer: true,
     needsIcav2AccessToken: true,
     needsExtendedTimeout: true,
+  },
+  validateCopyJob: {
+    needsIcav2AccessToken: true,
+    needsOrcabusApiToolsLayer: true,
   },
 };

@@ -33,6 +33,7 @@ export const stepFunctionToLambdasMap: Record<SfnName, LambdaName[]> = {
     'runFilemanagerSync',
     'addPortalRunIdAttributes',
     'filemanagerSyncCheck',
+    'validateCopyJob',
   ],
 };
 

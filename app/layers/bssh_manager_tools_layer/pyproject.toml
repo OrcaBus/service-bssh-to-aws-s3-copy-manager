@@ -16,9 +16,6 @@ repository = "https://github.com/umccr/orcabus"
 [tool.poetry.dependencies]
 python = "^3.14, <3.15"
 verboselogs = "^1.7"
-aws_requests_auth = "^0.4.3"
-xmltodict = "^0.13.0"
-v2_samplesheet_maker = "^4.2.4"
 
 [tool.poetry.group.dev]
 optional = true

@@ -178,7 +178,7 @@ def handler(event, context):
                 "sourceUriList": interops_as_uri + ([index_metrics_uri] if index_metrics_uri else []),
                 "destinationUri": convert_project_id_and_data_path_to_uri(
                     project_id=dest_project_data_obj.project_id,
-                    data_path=Path(dest_project_data_obj.data.details.path) + "InterOp",
+                    data_path=Path(dest_project_data_obj.data.details.path) / "InterOp",
                     data_type=FOLDER_DATA_TYPE,
                     uri_type=ICAV2_URI_SCHEME
                 )

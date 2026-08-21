@@ -11,11 +11,12 @@ import { buildAllEventRules } from './event-rules';
 import { buildAllEventBridgeTargets } from './event-targets';
 import { NagSuppressions } from 'cdk-nag';
 import { StageName } from '@orcabus/platform-cdk-constructs/shared-config/accounts';
+import { GitStack } from '@orcabus/platform-cdk-constructs/deployment-stack-pipeline';
 
 export type StatelessApplicationStackProps = StatelessApplicationStackConfig & cdk.StackProps;
 
 // Stateless Application Stack
-export class StatelessApplicationStack extends cdk.Stack {
+export class StatelessApplicationStack extends GitStack {
   public readonly stageName: StageName;
 
   constructor(scope: Construct, id: string, props: StatelessApplicationStackProps) {

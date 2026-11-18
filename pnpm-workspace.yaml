@@ -1,2 +1,14 @@
 ignoredBuiltDependencies:
   - unrs-resolver
+overrides:
+  glob@>=9.0.0 <=14.0.1: ^14.0.2
+  minimatch@>=7.0.0 <11.0.1: ^11.0.1
+  handlebars@>=3.0.0 <=4.7.9: ^4.7.10
+  brace-expansion@>=2.0.0 <2.1.7: ^2.1.7
+  brace-expansion@>=4.0.0 <5.0.12: ^5.0.12
+auditConfig:
+  ignoreGhsas:
+    # picomatch <=4.0.7 ReDoS through single-branch patterns (dev-only, via jest/eslint).
+    # No patched version is published (latest is 4.0.7). Remove this exception once
+    # a fixed release ships and add an override for it.
+    - GHSA-fc5q-39xc-vjpf

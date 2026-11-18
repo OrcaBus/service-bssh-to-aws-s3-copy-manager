@@ -69,6 +69,18 @@ function buildLambdaFunction(scope: Construct, props: BuildLambdaProps): LambdaO
     memorySize: lambdaRequirementsMap.needsIcav2AccessToken ? 1024 : undefined,
   });
 
+  // AwsSolutions-L1 - Python 3.14 is not the latest runtime but is our target runtime
+  NagSuppressions.addResourceSuppressions(
+    lambdaFunction,
+    [
+      {
+        id: 'AwsSolutions-L1',
+        reason:
+          'Python 3.14 is not the latest runtime in the cdk-nag approved list (Python 3.15 is available) but is our target runtime for ARM64 Lambda functions',
+      },
+    ],
+    true
+  );
   /* Do we need the bssh tools layer? */
   if (lambdaRequirementsMap.needsBsshLambdaLayer) {
     // Add the bssh tools layer to the lambda function
